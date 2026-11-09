@@ -24,14 +24,14 @@ const HERO = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=
 
 export default async function HomePage() {
   const [featured, trending, tours, hotels, home] = await Promise.all([
-    serverGet<Destination[]>("/destinations?featured=true&limit=8"),
+    serverGet<Destination[]>("/destinations?featured=true&scope=domestic&limit=4"),
     serverGet<Destination[]>("/destinations?trending=true&limit=8"),
     serverGetWithMeta<Tour[]>("/tours?featured=true&limit=8"),
     serverGetWithMeta<Hotel[]>("/hotels?sort=recommended&limit=8"),
     serverGet<{ banners: Banner[]; coupons: Coupon[] }>("/content/home"),
   ]);
 
-  const domestic = (featured ?? []).filter((d) => d.scope === "domestic").slice(0, 5);
+  const domestic = featured ?? [];
   const promos = (home?.banners ?? []).filter((b) => b.placement === "home-promo");
 
   return (
@@ -89,9 +89,9 @@ export default async function HomePage() {
       {domestic.length > 0 && (
         <section className="container-page pt-16" aria-labelledby="dest-heading">
           <SectionHeading eyebrow="Featured destinations" title="Discover Bangladesh" description="From the world's longest sea beach to cloud-top villages and mangrove forests." action={<LinkButton href="/destinations/bangladesh" variant="outline" size="sm">Explore Bangladesh <ArrowRight className="size-4" /></LinkButton>} />
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 lg:grid-rows-2">
-            {domestic.map((d, i) => (
-              <DestinationCard key={d._id} destination={d} size={i === 0 ? "lg" : "md"} className={i === 0 ? "col-span-2 lg:row-span-2" : "lg:aspect-auto lg:h-full lg:min-h-[12.5rem]"} />
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {domestic.map((d) => (
+              <DestinationCard key={d._id} destination={d} />
             ))}
           </div>
         </section>
