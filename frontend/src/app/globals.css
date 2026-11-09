@@ -1,0 +1,285 @@
+@import "tailwindcss";
+
+/*
+ * Tripnaro design tokens
+ * ─────────────────────
+ * Brand   – "Lagoon" teal: calm, trustworthy, travel-water.
+ * Accent  – "Sunset" coral: warm call-to-action colour, used sparingly.
+ * Ink     – deep navy text scale.
+ * Sand    – warm neutral surfaces.
+ */
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  --color-brand-50: #eef8f7;
+  --color-brand-100: #d5eeeb;
+  --color-brand-200: #acdcd7;
+  --color-brand-300: #78c2bb;
+  --color-brand-400: #46a29b;
+  --color-brand-500: #2a8680;
+  --color-brand-600: #1d6c68;
+  --color-brand-700: #185755;
+  --color-brand-800: #144645;
+  --color-brand-900: #0f3a3a;
+  --color-brand-950: #082525;
+
+  --color-coral-50: #fff3ef;
+  --color-coral-100: #ffe3da;
+  --color-coral-200: #ffc6b4;
+  --color-coral-300: #ffa084;
+  --color-coral-400: #ff7a55;
+  --color-coral-500: #f45d35;
+  --color-coral-600: #e0451d;
+  --color-coral-700: #b93516;
+
+  --color-ink-50: #f5f7fa;
+  --color-ink-100: #e9edf3;
+  --color-ink-200: #d3dae5;
+  --color-ink-300: #aeb9ca;
+  --color-ink-400: #8090a8;
+  --color-ink-500: #5d6d86;
+  --color-ink-600: #47566e;
+  --color-ink-700: #36435a;
+  --color-ink-800: #222d40;
+  --color-ink-900: #121b2b;
+
+  --color-sand-50: #fbf9f5;
+  --color-sand-100: #f5f0e7;
+  --color-sand-200: #ebe2d2;
+
+  --radius-card: 1.125rem;
+  --radius-field: 0.75rem;
+
+  --shadow-card: 0 1px 2px rgb(18 27 43 / 0.04), 0 4px 16px rgb(18 27 43 / 0.06);
+  --shadow-lift: 0 2px 6px rgb(18 27 43 / 0.06), 0 16px 40px rgb(18 27 43 / 0.12);
+  --shadow-search: 0 10px 50px rgb(8 37 37 / 0.18);
+
+  --animate-fade-up: fade-up 0.45s ease-out both;
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-sand-50 font-sans text-ink-800 antialiased;
+    overflow-x: hidden;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-ink-900;
+    text-wrap: balance;
+  }
+  ::selection {
+    @apply bg-brand-200 text-brand-950;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .card {
+    @apply rounded-(--radius-card) border border-ink-100 bg-white shadow-(--shadow-card);
+  }
+  .field {
+    @apply h-11 w-full rounded-(--radius-field) border border-ink-200 bg-white px-3.5 text-[15px] text-ink-900 transition placeholder:text-ink-400 hover:border-ink-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-ink-50;
+  }
+  .field-error {
+    @apply border-coral-500 focus:border-coral-500 focus:ring-coral-100;
+  }
+  .label {
+    @apply mb-1.5 block text-[13px] font-semibold text-ink-700;
+  }
+  .eyebrow {
+    @apply text-xs font-bold tracking-[0.14em] text-brand-600 uppercase;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * Brand loader (PageLoader / LogoMark animated)
+ * The route of the "T" draws in, the coral destination dot lands, then the route clears
+ * and the loop repeats. One 1.8 s cycle, transform/opacity/dashoffset only.
+ */
+@layer components {
+  .loader-route {
+    stroke-dasharray: 1 1;
+    animation: loader-route 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+  .loader-dot {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: loader-dot 1.8s ease-in-out infinite;
+  }
+  .loader-halo {
+    animation: loader-halo 1.8s ease-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loader-route,
+    .loader-dot {
+      animation: none;
+    }
+    .loader-halo {
+      animation: none;
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes loader-route {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  50%,
+  70% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+@keyframes loader-dot {
+  0%,
+  38% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  52% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+  60%,
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes loader-halo {
+  0%,
+  45% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  55% {
+    opacity: 0.28;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+/*
+ * Select dropdown panel
+ * Chromium's native <select> popup ignores padding, so options sit flush against its edges.
+ * Where customizable select is supported, `.select-base` (added by `selectClass`) turns the popup
+ * into a Tripnaro panel; other browsers keep their native picker. Keyboard, screen-reader and
+ * mobile behaviour stays native either way. The chevron is drawn by <SelectFrame>.
+ */
+@layer base {
+  @supports (appearance: base-select) {
+    .select-base {
+      padding-block: 0;
+      border-width: 0;
+      background-color: transparent;
+      align-items: center;
+    }
+    .select-base::picker-icon {
+      display: none;
+    }
+    .select-base::picker(select) {
+      appearance: base-select;
+      margin-block: 0.5rem;
+      min-width: anchor-size(width);
+      max-height: min(20rem, 60vh);
+      padding: 0.375rem;
+      border: 1px solid var(--color-ink-100);
+      border-radius: 0.75rem;
+      background: #fff;
+      box-shadow: var(--shadow-lift);
+      font-size: 14px;
+    }
+    .select-base option {
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 0.5rem;
+      color: var(--color-ink-800);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .select-base option:hover,
+    .select-base option:focus-visible {
+      background-color: var(--color-brand-50);
+      color: var(--color-brand-800);
+      outline: none;
+    }
+    .select-base option:checked {
+      background-color: var(--color-brand-50);
+      color: var(--color-brand-700);
+      font-weight: 700;
+    }
+    .select-base option::checkmark {
+      order: 1;
+      margin-inline-start: auto;
+      color: var(--color-brand-600);
+    }
+    .select-base optgroup {
+      padding-block: 0.25rem;
+    }
+    .select-base optgroup legend {
+      padding: 0.5rem 0.75rem 0.25rem;
+      color: var(--color-ink-500);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    /* Search-form selects sit inside a padded SearchBox: widen the panel to the box edges. */
+    /* (`appearance` itself is set unlayered below so it beats the `appearance-none` fallback utility.) */
+    .select-search::picker(select) {
+      margin-inline-start: -0.875rem;
+      min-width: calc(anchor-size(width) + 1.75rem);
+      margin-block-start: 1rem;
+    }
+  }
+}
+
+/* Unlayered on purpose: must win over the `appearance-none` utility that is the fallback elsewhere. */
+@supports (appearance: base-select) {
+  .select-base {
+    appearance: base-select;
+  }
+}
