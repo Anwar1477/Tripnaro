@@ -1,6 +1,89 @@
-# Tripnaro: travel booking platform
+<div align="center">
+
+# Tripnaro
+
+**A full-stack travel booking platform for flights, hotels, tour packages, bus tickets and visa services.**
+
+Built with Next.js, React, TypeScript, Node.js, Express and MongoDB.
+
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-20.11+-5FA04E?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose_9-47A248?logo=mongodb&logoColor=white)
+![Playwright](https://img.shields.io/badge/Tested_with-Playwright-2EAD33?logo=playwright&logoColor=white)
+
+[Features](#features) · [Screenshots](#screenshots) · [Tech stack](#tech-stack) · [Architecture](#architecture) · [Getting started](#getting-started) · [API](#7-api-overview) · [Testing](#8-testing) · [Roadmap](#roadmap)
+
+</div>
+
+---
+
+## Overview
 
 Tripnaro is a full-stack travel marketplace for Bangladesh and beyond. It covers flights, hotels, tour packages, intercity buses and visa processing, with customer accounts, a back office and payments that are verified on the server.
+
+> [!NOTE]
+> **This project ships in demo mode.** Payments run through a clearly labelled demo gateway, and no money moves. Flight results come from seeded **demo inventory**, not live airline availability. Real gateways (SSLCommerz, bKash, Nagad, Stripe) and live flight content (Amadeus) switch on once their credentials are set. See [Payment providers](#payment-providers) and [Flight inventory](#flight-inventory).
+
+## Features
+
+### Travel products
+
+| Product | What's included |
+| --- | --- |
+| ✈️ **Flights** | One-way, round-trip and multi-city search. Filters for price, stops, departure time, airline and refundability, plus sorting. Leg-by-leg selection, passenger forms. A pluggable provider (demo or Amadeus). |
+| 🏨 **Hotels** | Destination search with filters and facets. Detail page with gallery, map (OpenStreetMap), amenities and reviews. Room availability for the chosen dates. |
+| 🗺️ **Tour packages** | Filterable listing. Detail page with day-by-day itinerary, departures and live seat counts. Booking, and a custom tour request form. |
+| 🚌 **Bus tickets** | City-to-city search, interactive seat map, boarding and dropping points. Conflict-checked seat reservation. |
+| 🛂 **Visa services** | Country listings and requirements. Online application with document upload, fee payment, public status tracking and an admin status workflow. |
+
+### Platform
+
+- **Customer accounts:** register, login, forgot and reset password, change password. The dashboard covers bookings (with cancellation and refund requests), visa applications, wishlist, saved travellers, payments, notifications, profile and notification preferences.
+- **Checkout:** prices are always quoted on the server. Coupon codes, 30-minute inventory holds and a server-verified payment flow.
+- **Admin panel:** a dashboard that reports live and demo revenue separately, booking operations, users, visa files, payments, review moderation, newsletter CSV export, site settings, and CRUD with image upload for 11 catalogue resources.
+- **SEO:** per-page metadata, canonical URLs, Open Graph and Twitter cards. JSON-LD for `Hotel`, `TouristTrip`, `TouristDestination`, `FAQPage`, `BreadcrumbList` and `Organization`. A generated `sitemap.xml` and `robots.txt`.
+- **Responsive UI:** mobile-first layouts tested from 320 px to 1440 px.
+
+## Highlights
+
+- 🔒 **Payments verified on the server.** A booking is marked paid only after the API confirms the transaction with the provider. The redirect URL is never trusted. See [How booking and payment integrity works](#how-booking-and-payment-integrity-works).
+- 🧮 **Server-side pricing.** The browser sends only identifiers, and the API calculates every total.
+- ⏱️ **Inventory holds.** Rooms, tour seats and bus seats are held for 30 minutes and released by a background sweeper.
+- 🍪 **First-party session cookie.** JWT in an HTTP-only cookie. Next.js proxies `/api/v1/*`, so the browser only ever talks to one origin.
+- 🛡️ **Hardened API.** Helmet, rate limiting on auth routes, Zod validation on every input, role-based access control on `/admin/*`, and private storage for visa documents.
+- 🔌 **Adapters for providers.** Payment gateways and flight sources sit behind interfaces, so going live needs credentials, not a rewrite.
+- 🧪 **End-to-end tests.** 42 Playwright tests cover every booking flow, payment forgery, RBAC, SEO tags and responsive layout.
+
+## Screenshots
+
+> These are real captures of the app running locally with seeded sample data.
+
+| Home | Flight results (demo inventory) |
+| --- | --- |
+| ![Tripnaro home page with the multi-product search widget](docs/screenshots/home.png) | ![Round-trip flight results with filters and the demo inventory notice](docs/screenshots/flight-results.png) |
+| **Hotel search** | **Tour detail** |
+| ![Hotel search results with filters](docs/screenshots/hotel-search.png) | ![Tour package detail page with itinerary and departures](docs/screenshots/tour-detail.png) |
+| **Visa service** | **Admin dashboard** |
+| ![Visa country page with requirements and application](docs/screenshots/visa.png) | ![Admin dashboard with live and demo revenue reported separately](docs/screenshots/admin-dashboard.png) |
+| **Admin catalogue (tours)** | **Mobile** |
+| ![Admin tours management table](docs/screenshots/admin-tours.png) | <img src="docs/screenshots/mobile-home.png" alt="Tripnaro home page on a mobile screen" width="260"> |
+
+## Tech stack
+
+| Layer | Technologies |
+| --- | --- |
+| **Frontend** | Next.js 16 (App Router, Turbopack), React 19, TypeScript, Tailwind CSS v4, React Hook Form + Zod, Zustand, Axios, lucide-react |
+| **Backend** | Node.js, Express 5, TypeScript, Mongoose 9, Zod, JSON Web Tokens, bcrypt, Helmet, express-rate-limit, Multer, Nodemailer |
+| **Database** | MongoDB 6+ (local or Atlas) |
+| **Payments** | Demo gateway (HMAC-signed), plus adapters for SSLCommerz, bKash, Nagad and Stripe |
+| **Flight content** | Demo provider (seeded schedules), plus an Amadeus Self-Service adapter |
+| **Testing & tooling** | Playwright, ESLint, Prettier, tsx |
+
+## Architecture
 
 ```
 E:\Tripnaro
@@ -10,7 +93,48 @@ E:\Tripnaro
 
 The two apps are completely separate. The browser talks only to the Next.js origin, and Next rewrites `/api/v1/*` and `/uploads/*` to the API. That keeps the HTTP-only session cookie first-party.
 
+```
+Browser ──► Next.js (SSR / ISR pages, rewrites) ──► Express API /api/v1 ──► MongoDB
+                                                     │
+                                                     ├── Payment adapters (demo · SSLCommerz · bKash · Nagad · Stripe)
+                                                     └── Flight providers (demo · Amadeus)
+```
+
+### Folder structure
+
+```
+backend/src
+├── app.ts, server.ts          Express app setup, startup and the hold-expiry sweeper
+├── config/                    Environment parsing and the MongoDB connection
+├── controllers/               Auth, account, catalog, transport, visa, booking, payment, admin, content
+│   └── crud.factory.ts        Generic admin CRUD
+├── middlewares/               Auth/RBAC, Zod validation, uploads, error handler
+├── models/                    User, Destination, Hotel, Room, Tour, Flight, Airport, Bus, Visa, Booking, Payment, …
+├── routes/                    Public and admin routers
+├── services/
+│   ├── booking / availability / coupon / email / notification services
+│   ├── payments/              demo, sslcommerz, bkash, nagad and stripe adapters
+│   └── flights/               demo and amadeus providers
+├── seeders/                   Sample data and the seed script
+├── utils/, validators/, types/
+
+frontend/src
+├── app/
+│   ├── (site)/                flights, hotels, tours, bus, visa, destinations, checkout, payment,
+│   │                          my-account, login, register, forgot/reset password, info pages
+│   ├── admin/                 dashboard, bookings, payments, users, visa applications, reviews,
+│   │                          newsletter, settings, content (catalogue CRUD)
+│   ├── sitemap.ts, robots.ts  SEO routes
+├── components/                Feature folders (flights, hotels, tours, bus, visa, booking, admin, …)
+├── services/, lib/, hooks/, store/, types/, utils/
+└── proxy.ts                   Route protection for account and admin pages
+
+frontend/e2e                   Playwright specs (site.spec.ts, flows.spec.ts)
+```
+
 ---
+
+## Getting started
 
 ## 1. Requirements
 
@@ -55,6 +179,7 @@ cd frontend && cp .env.example .env.local
 | `SSLCOMMERZ_*`, `BKASH_*`, `NAGAD_*`, `STRIPE_SECRET_KEY` | Live or sandbox gateway credentials. A method stays disabled until its credentials are set |
 | `FLIGHT_PROVIDER` | `demo` (seeded schedules, labelled as demo) or `amadeus` |
 | `AMADEUS_CLIENT_ID/SECRET` | Needed when `FLIGHT_PROVIDER=amadeus` |
+| `AUTH_RATE_LIMIT` | Optional. Max auth requests per IP per window (default `30`) |
 
 **Frontend (`frontend/.env.local`)**
 
@@ -64,7 +189,7 @@ cd frontend && cp .env.example .env.local
 | `NEXT_PUBLIC_SITE_URL` | Canonical site URL for metadata, sitemap and Open Graph |
 | `AUTH_COOKIE_NAME` | Optional. Must match the backend `COOKIE_NAME` if you change it |
 
-The frontend never contains secrets. Every key lives in the backend `.env`.
+The frontend never contains secrets. Every key lives in the backend `.env`, which is git-ignored. Never commit real credentials.
 
 ## 4. Install, seed and run
 
@@ -82,6 +207,8 @@ npm run dev         # http://localhost:3000
 ```
 
 ### Seeded accounts
+
+These are **demo-only sample accounts** for local development.
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -189,5 +316,20 @@ Production checklist:
 - Point `BACKEND_URL` at the internal API address.
 - Persist `backend/uploads/`. Public images are in `uploads/public`; private visa documents are in `uploads/private`, which is never served statically.
 - Run the API behind a reverse proxy (nginx or a PaaS) with `trust proxy` (already enabled) so the rate limiting sees real client IPs.
-#   T r i p n a r o  
- 
+
+---
+
+## Roadmap
+
+These items are **planned and not yet implemented**:
+
+- [ ] Sandbox certification and go-live for SSLCommerz, bKash and Nagad
+- [ ] Live flight content via Amadeus (or another GDS/NDC provider) with ticket issuance
+- [ ] Continuous integration (lint, typecheck and Playwright on every push)
+- [ ] Docker Compose setup for one-command local start
+- [ ] Bangla (বাংলা) localisation
+- [ ] Public deployment and a live demo URL
+
+## Author
+
+Built by **Anwar Hosen** ([@Anwar1477](https://github.com/Anwar1477)).
