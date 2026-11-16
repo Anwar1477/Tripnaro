@@ -257,3 +257,49 @@ test.describe("admin", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("admin booking visibility", () => {
+  test("a new customer booking appears in the admin list without reloading", async ({ browser }) => {
+    test.setTimeout(120_000);
+    const adminCtx = await browser.newContext();
+    const admin = await adminCtx.newPage();
+    const errors = trackErrors(admin);
+    await apiLogin(admin, ADMIN);
+    await admin.goto("/admin/bookings");
+    await expect(admin.getByRole("columnheader", { name: "Booked" })).toBeVisible();
+    await expect(admin.getByText(/updates automatically/)).toBeVisible();
+
+    // A different customer books while the admin page stays open.
+    const customerCtx = await browser.newContext();
+    const customer = await customerCtx.newPage();
+    const user = await registerUser(customer, "adminsync");
+    const hotels = await (await customer.request.get("/api/v1/hotels?limit=1")).json();
+    const detail = await (await customer.request.get(`/api/v1/hotels/${hotels.data[0].slug}`)).json();
+    const hotel = detail.data.hotel ?? detail.data;
+    const room = (detail.data.rooms ?? hotel.rooms)[0];
+    const res = await customer.request.post("/api/v1/bookings", {
+      data: {
+        type: "hotel", hotelId: hotel._id, roomId: room._id, checkIn: dateInput(60), checkOut: dateInput(62), rooms: 1, adults: 1,
+        contact: { name: "Admin Sync Tester", email: user.email, phone: "+8801711000000" },
+        travelers: [{ type: "adult", firstName: "Admin", lastName: "Sync" }],
+      },
+    });
+    expect(res.status(), await res.text()).toBe(201);
+    const created = (await res.json()).data;
+    const reference: string = (created.booking ?? created).reference;
+
+    // The admin page was never reloaded: auto-refresh must bring the booking in, with the customer and status.
+    const row = admin.getByRole("row", { name: new RegExp(reference) });
+    await expect(row).toBeVisible({ timeout: 45_000 });
+    await expect(row).toContainText(user.email);
+    await expect(row).toContainText(/unpaid/i);
+
+    // Search finds it too.
+    await admin.getByPlaceholder("Search…").fill(reference);
+    await expect(admin.getByRole("row", { name: new RegExp(reference) })).toBeVisible();
+    await expect(admin.getByText(/^1 booking ·/)).toBeVisible();
+    expect(errors).toEqual([]);
+    await adminCtx.close();
+    await customerCtx.close();
+  });
+});

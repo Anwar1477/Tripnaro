@@ -1,7 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { RefreshCw } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
 import { AdminToolbar, opts, Table } from "@/components/admin/AdminTable";
 import { PriceSummary } from "@/components/booking/PriceSummary";
 import { StatusBadge } from "@/components/common/Badge";
@@ -17,6 +18,9 @@ import { toast } from "@/store/toast";
 import type { Booking } from "@/types";
 
 type AdminBooking = Booking & { user: { _id: string; name: string; email: string } };
+/** New bookings show up without a manual reload: refetch every 30 s while the tab is visible and on focus. */
+const AUTO_REFRESH_MS = 30_000;
+
 const ACTIONS: { value: string; label: string; when: (b: AdminBooking) => boolean }[] = [
   { value: "confirm", label: "Confirm booking", when: (b) => b.status === "pending" },
   { value: "mark_paid", label: "Mark as paid (offline payment)", when: (b) => b.paymentStatus === "unpaid" || b.paymentStatus === "failed" },
@@ -42,6 +46,20 @@ function AdminBookings() {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const { reload } = list;
+
+  useEffect(() => {
+    if (selected) return; // do not refresh underneath an open booking
+    const refresh = () => document.visibilityState === "visible" && reload();
+    const timer = window.setInterval(refresh, AUTO_REFRESH_MS);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [reload, selected]);
 
   function open(b: AdminBooking) {
     setSelected(b);
@@ -79,15 +97,21 @@ function AdminBookings() {
           { label: "Payment", value: paymentStatus, onChange: (v) => { setPaymentStatus(v); setPage(1); }, options: opts("unpaid", "paid", "failed", "refund_pending", "refunded") },
           { label: "Cancellation", value: cancellation, onChange: (v) => { setCancellation(v); setPage(1); }, options: [{ value: "requested", label: "Requested" }] },
         ]}
-      />
+      >
+        <Button variant="outline" onClick={reload} loading={list.loading && !!list.data} aria-label="Refresh bookings">
+          <RefreshCw className="size-4" /> Refresh
+        </Button>
+      </AdminToolbar>
+      {list.data && <p className="mb-3 text-xs text-ink-500">{list.data.meta.total} booking{list.data.meta.total === 1 ? "" : "s"} · updates automatically</p>}
       {list.error ? <ErrorState message={list.error} onRetry={list.reload} /> : list.loading && !list.data ? <Skeleton className="h-64" /> : !list.data?.items.length ? <EmptyState title="No bookings match" /> : (
         <>
-          <Table head={["Reference", "Customer", "Item", "Date", "Total", "Status", "Payment", ""]} minWidth="60rem">
+          <Table head={["Reference", "Customer", "Item", "Booked", "Travel date", "Total", "Status", "Payment", ""]} minWidth="66rem">
             {list.data.items.map((b) => (
               <tr key={b._id} className="hover:bg-sand-50/60">
                 <td className="px-4 py-2.5"><span className="font-mono text-xs font-bold">{b.reference}</span><span className="block text-xs text-ink-500 capitalize">{b.type}</span></td>
-                <td className="px-4 py-2.5">{b.user?.name}<span className="block text-xs text-ink-500">{b.user?.email}</span></td>
+                <td className="px-4 py-2.5">{b.user?.name ?? b.contact?.name}<span className="block text-xs text-ink-500">{b.user?.email ?? b.contact?.email}</span></td>
                 <td className="max-w-56 truncate px-4 py-2.5">{b.title}</td>
+                <td className="px-4 py-2.5 whitespace-nowrap">{formatDateTime(b.createdAt)}</td>
                 <td className="px-4 py-2.5 whitespace-nowrap">{formatDate(b.startDate)}</td>
                 <td className="px-4 py-2.5 font-semibold">{formatPrice(b.pricing.total)}</td>
                 <td className="px-4 py-2.5"><StatusBadge status={b.status} />{b.cancellation?.status === "requested" && <StatusBadge status="requested" className="ml-1" />}</td>
@@ -105,7 +129,8 @@ function AdminBookings() {
           <div className="space-y-4 text-sm">
             <div className="flex flex-wrap gap-2"><StatusBadge status={selected.status} /><StatusBadge status={selected.paymentStatus} />{selected.cancellation?.status && <StatusBadge status={`cancellation_${selected.cancellation.status}`} />}</div>
             <p className="font-bold">{selected.title}</p>
-            <p className="text-ink-600">{selected.user?.name} · {selected.contact.email} · {selected.contact.phone}</p>
+            <p className="text-ink-600">{selected.user?.name ?? selected.contact.name} · {selected.contact.email} · {selected.contact.phone}</p>
+            <p className="text-xs text-ink-500">Booked {formatDateTime(selected.createdAt)} · travel {formatDate(selected.startDate)}</p>
             {selected.cancellation?.reason && <Alert tone="warning" title="Cancellation reason">{selected.cancellation.reason}</Alert>}
             {selected.refund?.reason && <Alert tone="info" title={`Refund ${selected.refund.status}`}>{selected.refund.reason}</Alert>}
             <div className="grid gap-4 sm:grid-cols-2">
