@@ -97,13 +97,14 @@ router.get('/visa/applications/:id', authenticate, visa.getApplication);
 router.get('/visa/applications/:id/documents/:docId', authenticate, visa.downloadDocument);
 
 /* ───── Bookings ───── */
-router.post('/bookings/quote', validateBody(quoteBookingSchema), booking.quote);
+router.post('/bookings/quote', optionalAuth, validateBody(quoteBookingSchema), booking.quote);
 router.post('/bookings', authenticate, validateBody(createBookingSchema), booking.create);
 router.get('/bookings', authenticate, booking.listMine);
 router.get('/bookings/:id', authenticate, booking.getOne);
 router.post('/bookings/:id/cancel', authenticate, validateBody(cancelBookingSchema), booking.requestCancellation);
 router.post('/bookings/:id/refund', authenticate, validateBody(refundRequestSchema), booking.requestRefund);
-router.post('/coupons/validate', validateBody(couponValidateSchema), booking.validateCoupon);
+router.delete('/bookings/:id/coupon', authenticate, booking.removeCoupon);
+router.post('/coupons/validate', optionalAuth, validateBody(couponValidateSchema), booking.validateCoupon);
 
 /* ───── Payments ───── */
 router.get('/payments/methods', payment.methods);

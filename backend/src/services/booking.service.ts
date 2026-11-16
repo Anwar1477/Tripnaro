@@ -2,7 +2,7 @@ import type { z } from 'zod';
 import { env } from '../config/env';
 import { Booking, type BookingDocument } from '../models/Booking';
 import { Bus, seatMap } from '../models/Bus';
-import { Setting } from '../models/Engagement';
+import { Coupon, Setting } from '../models/Engagement';
 import { Hotel } from '../models/Hotel';
 import { Room } from '../models/Room';
 import { Tour } from '../models/Tour';
@@ -16,7 +16,16 @@ import type {
   tourBookingSchema,
 } from '../validators/booking.validator';
 import { roomAvailability, takenBusSeats } from './availability.service';
-import { evaluateCoupon, markCouponUsed } from './coupon.service';
+import {
+  claimCouponSlot,
+  CouponError,
+  couponsEnabled,
+  countUserCouponUses,
+  evaluateCoupon,
+  markCouponUsed,
+  releaseCouponSlot,
+  type CouponResult,
+} from './coupon.service';
 import { emailTemplates } from './email.service';
 import { getProviderForOffer } from './flights';
 import { notifyUser } from './notification.service';
@@ -281,28 +290,63 @@ async function serviceFeePercent(): Promise<number> {
   return settings?.serviceFeePercent ?? 2;
 }
 
-/** Builds a price quote without creating a booking (used by checkout summaries). */
-export async function quoteBooking(input: CreateBookingInput) {
-  const draft = await (builders[input.type] as (i: CreateBookingInput) => Promise<BookingDraft>)(input);
-  return priceDraft(draft, input.couponCode || undefined);
+interface QuoteOptions {
+  userId?: string;
+  /**
+   * Quote mode: a rejected coupon does not fail the quote. The plain price is returned with
+   * `couponError`, so the customer keeps seeing a correct total next to the error message.
+   */
+  soft?: boolean;
 }
 
-async function priceDraft(draft: BookingDraft, couponCode?: string) {
+/** Builds a price quote without creating a booking (used by checkout summaries). */
+export async function quoteBooking(input: CreateBookingInput, opts: QuoteOptions = {}) {
+  const draft = await (builders[input.type] as (i: CreateBookingInput) => Promise<BookingDraft>)(input);
+  return priceDraft(draft, input.couponCode || undefined, opts);
+}
+
+const COUPON_LINE = 'Coupon ';
+
+/** Price lines and total for a subtotal (fare + taxes). Coupons discount the subtotal, never the service fee. */
+function buildPricing(base: number, taxes: number, lines: { label: string; amount: number }[], serviceFee: number, coupon: CouponResult | null) {
+  const discount = coupon?.discount ?? 0;
+  const total = Math.round(Math.max(0, base + taxes + serviceFee - discount));
+  const breakdown = [
+    ...lines.filter((l) => !l.label.startsWith(COUPON_LINE) && l.label !== 'Service fee'),
+    { label: 'Service fee', amount: serviceFee },
+    ...(coupon ? [{ label: `${COUPON_LINE}${coupon.code}`, amount: -discount }] : []),
+  ];
+  return { currency: 'BDT', base, taxes, serviceFee, discount, total, breakdown };
+}
+
+async function priceDraft(draft: BookingDraft, couponCode: string | undefined, opts: QuoteOptions = {}) {
   const subtotal = draft.base + draft.taxes;
   const serviceFee = Math.round((subtotal * (await serviceFeePercent())) / 100);
-  const coupon = couponCode ? await evaluateCoupon(couponCode, draft.type, subtotal) : null;
-  const discount = coupon?.discount ?? 0;
-  const total = Math.round(Math.max(0, subtotal + serviceFee - discount));
-  const breakdown = [
-    ...draft.breakdown,
-    { label: 'Service fee', amount: serviceFee },
-    ...(coupon ? [{ label: `Coupon ${coupon.code}`, amount: -discount }] : []),
-  ];
-  return { draft, coupon, pricing: { currency: 'BDT', base: draft.base, taxes: draft.taxes, serviceFee, discount, total, breakdown } };
+  let coupon: CouponResult | null = null;
+  let couponError: { code: string; message: string } | null = null;
+  if (couponCode) {
+    try {
+      coupon = await evaluateCoupon(couponCode, draft.type, subtotal, { userId: opts.userId });
+    } catch (err) {
+      if (!(opts.soft && err instanceof CouponError)) throw err;
+      couponError = { code: err.code, message: err.message };
+    }
+  }
+  // couponsEnabled lets the booking form show or hide the coupon box without a separate settings call.
+  return { draft, coupon, couponError, couponsEnabled: await couponsEnabled(), pricing: buildPricing(draft.base, draft.taxes, draft.breakdown, serviceFee, coupon) };
+}
+
+const couponSnapshot = (c: CouponResult, claimed: boolean) => ({ code: c.code, title: c.title, discountType: c.discountType, value: c.value, discount: c.discount, claimed });
+
+/** Rolls back a booking that failed a post-insert check: frees seats, the coupon slot and the record. */
+async function discardNewBooking(booking: BookingDocument) {
+  await releaseInventory(booking);
+  if (booking.coupon?.claimed && booking.coupon.code) await releaseCouponSlot(booking.coupon.code);
+  await Booking.deleteOne({ _id: booking._id });
 }
 
 export async function createBooking(userId: string, input: CreateBookingInput): Promise<BookingDocument> {
-  const { draft, coupon, pricing } = await quoteBooking(input);
+  const { draft, coupon, pricing } = await quoteBooking(input, { userId });
 
   if (draft.reserve) {
     const ok = await draft.reserve();
@@ -310,7 +354,19 @@ export async function createBooking(userId: string, input: CreateBookingInput): 
     draft.details.seatsReserved = true;
   }
 
-  const booking = await Booking.create({
+  // Reserve a coupon usage slot atomically (closes the race between concurrent bookings).
+  if (coupon) {
+    try {
+      await claimCouponSlot(coupon.code);
+    } catch (err) {
+      await releaseDraftInventory(draft);
+      throw err;
+    }
+  }
+
+  let booking: BookingDocument;
+  try {
+    booking = await Booking.create({
     reference: generateReference(draft.type),
     user: userId,
     type: draft.type,
@@ -327,10 +383,24 @@ export async function createBooking(userId: string, input: CreateBookingInput): 
     contact: input.contact,
     specialRequests: input.specialRequests,
     pricing,
-    coupon: coupon ? { code: coupon.code, discount: coupon.discount } : undefined,
+    coupon: coupon ? couponSnapshot(coupon, true) : undefined,
     holdExpiresAt: new Date(Date.now() + HOLD_MINUTES * 60_000),
     statusHistory: [{ status: 'pending', note: 'Booking created, awaiting payment' }],
-  });
+    });
+  } catch (err) {
+    if (coupon) await releaseCouponSlot(coupon.code);
+    await releaseDraftInventory(draft);
+    throw err;
+  }
+
+  // Per-user limit, re-checked after insert: if the same customer raced two bookings, the extra one is rolled back.
+  if (coupon) {
+    const limit = (await Coupon.findOne({ code: coupon.code }).select('perUserLimit').lean())?.perUserLimit ?? 0;
+    if (limit > 0 && (await countUserCouponUses(userId, coupon.code)) > limit) {
+      await discardNewBooking(booking);
+      throw new CouponError('USER_LIMIT', limit === 1 ? 'You have already used this coupon' : `You have already used this coupon ${limit} times`);
+    }
+  }
 
   // Post-insert guard for bus seats: if a concurrent booking grabbed the same seat, the later one loses.
   if (draft.type === 'bus') {
@@ -345,7 +415,7 @@ export async function createBooking(userId: string, input: CreateBookingInput): 
       $or: [{ status: 'confirmed' }, { status: 'pending', holdExpiresAt: { $gt: new Date() } }],
     }).countDocuments();
     if (rivals > 0) {
-      await Booking.deleteOne({ _id: booking._id });
+      await discardNewBooking(booking);
       throw ApiError.conflict('One of your seats was just booked by someone else. Please choose again.');
     }
   }
@@ -369,7 +439,8 @@ export async function confirmBookingPayment(bookingId: string): Promise<void> {
   booking.holdExpiresAt = undefined;
   booking.statusHistory.push({ status: 'confirmed', note: 'Payment verified', at: new Date() });
   await booking.save();
-  if (booking.coupon?.code) await markCouponUsed(booking.coupon.code);
+  // Claimed bookings already hold their slot; only legacy (pre-claim) bookings count usage here.
+  if (booking.coupon?.code && !booking.coupon.claimed) await markCouponUsed(booking.coupon.code);
 
   const userId = String(booking.user._id);
   const tpl = emailTemplates.bookingConfirmed(
@@ -405,9 +476,85 @@ async function releaseInventory(booking: BookingDocument): Promise<void> {
   }
 }
 
+/** Undo a tour seat reservation made by a draft that never became a booking. */
+async function releaseDraftInventory(draft: BookingDraft): Promise<void> {
+  if (draft.type === 'tour' && draft.details.seatsReserved && draft.departureId) {
+    await Tour.updateOne({ _id: draft.item, 'departures._id': draft.departureId }, { $inc: { 'departures.$.bookedSeats': -Number(draft.details.seats ?? 0) } });
+    draft.details.seatsReserved = false;
+  }
+}
+
+/** Gives the booking's coupon usage slot back (idempotent). The caller saves the booking. */
+async function releaseBookingCoupon(booking: BookingDocument): Promise<void> {
+  if (booking.coupon?.code && booking.coupon.claimed) {
+    await releaseCouponSlot(booking.coupon.code);
+    booking.coupon.claimed = false;
+  }
+}
+
+/** Re-prices a stored booking with a different coupon result (or none). */
+function repriceBooking(booking: BookingDocument, coupon: CouponResult | null) {
+  const p = booking.pricing!;
+  const lines = (p.breakdown ?? []).map((l) => ({ label: l.label ?? '', amount: l.amount ?? 0 }));
+  booking.pricing = buildPricing(p.base, p.taxes ?? 0, lines, p.serviceFee ?? 0, coupon) as typeof booking.pricing;
+  if (coupon) booking.coupon = { ...couponSnapshot(coupon, !!booking.coupon?.claimed) };
+  else booking.coupon = undefined;
+  booking.markModified('pricing');
+  booking.markModified('coupon');
+}
+
+const payable = (booking: BookingDocument) => booking.status === 'pending' && booking.paymentStatus !== 'paid';
+
+/**
+ * Called when payment starts. The coupon is re-checked against the *current* admin settings
+ * (global switch, status, dates, limits, payment channel) and the discount recalculated. If
+ * anything changed, the booking is re-priced and saved and a 409 is thrown, so the customer sees
+ * the new total before paying. Payment-channel mismatches leave the booking untouched.
+ */
+export async function revalidateBookingCoupon(booking: BookingDocument, provider: string): Promise<void> {
+  const code = booking.coupon?.code;
+  if (!code || !payable(booking)) return;
+  const p = booking.pricing!;
+  const subtotal = p.base + (p.taxes ?? 0);
+  try {
+    const fresh = await evaluateCoupon(code, booking.type, subtotal, {
+      userId: String(booking.user),
+      provider,
+      excludeBookingId: booking.id,
+      holdsSlot: !!booking.coupon?.claimed,
+    });
+    if (fresh.discount === (booking.coupon?.discount ?? 0) && fresh.value === booking.coupon?.value) return;
+    repriceBooking(booking, fresh);
+    booking.statusHistory.push({ status: booking.status, note: `Coupon ${code} re-applied with current terms`, at: new Date() });
+    await booking.save();
+    throw new ApiError(409, `The ${code} discount has changed. Your new total is BDT ${booking.pricing!.total.toLocaleString('en-US')}. Please review and pay again.`, 'COUPON_UPDATED');
+  } catch (err) {
+    if (!(err instanceof CouponError)) throw err;
+    if (err.reason === 'PAYMENT_CHANNEL') throw err;
+    await releaseBookingCoupon(booking);
+    repriceBooking(booking, null);
+    booking.statusHistory.push({ status: booking.status, note: `Coupon ${code} removed: ${err.message}`, at: new Date() });
+    await booking.save();
+    throw new ApiError(409, `${err.message}, so coupon ${code} was removed. Your new total is BDT ${booking.pricing!.total.toLocaleString('en-US')}. Please review and pay again.`, 'COUPON_REMOVED');
+  }
+}
+
+/** Customer action at checkout: drop the coupon from an unpaid booking and restore the full price. */
+export async function removeBookingCoupon(booking: BookingDocument): Promise<BookingDocument> {
+  if (!payable(booking)) throw ApiError.badRequest('The coupon can only be removed before payment');
+  if (!booking.coupon?.code) return booking;
+  const code = booking.coupon.code;
+  await releaseBookingCoupon(booking);
+  repriceBooking(booking, null);
+  booking.statusHistory.push({ status: booking.status, note: `Coupon ${code} removed by customer`, at: new Date() });
+  await booking.save();
+  return booking;
+}
+
 export async function cancelBooking(booking: BookingDocument, note: string, actor: 'user' | 'admin' | 'system') {
   if (booking.status === 'cancelled') return booking;
   await releaseInventory(booking);
+  await releaseBookingCoupon(booking);
   booking.status = 'cancelled';
   booking.holdExpiresAt = undefined;
   if (booking.paymentStatus === 'paid') {

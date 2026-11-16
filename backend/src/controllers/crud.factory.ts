@@ -14,6 +14,11 @@ interface CrudOptions {
   sort?: Record<string, SortOrder>;
   /** Field used to auto-generate `slug` when none is provided. */
   slugFrom?: string;
+  /**
+   * Optional validation/normalisation hook run before create and update. On update it receives the
+   * stored document so cross-field rules can check the merged result. Throw to reject.
+   */
+  validate?: (data: Record<string, unknown>, ctx: { existing?: Record<string, unknown>; id?: string }) => Promise<Record<string, unknown>>;
 }
 
 const PROTECTED_FIELDS = ['_id', 'id', '__v', 'createdAt', 'updatedAt'];
@@ -33,7 +38,7 @@ function coerce(value: string): unknown {
 /** Generic, reusable admin CRUD handlers for content collections. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function crudFactory(model: Model<any>, options: CrudOptions) {
-  const { name, searchFields = [], filterFields = [], populate, sort = { createdAt: -1 }, slugFrom } = options;
+  const { name, searchFields = [], filterFields = [], populate, sort = { createdAt: -1 }, slugFrom, validate } = options;
 
   async function ensureSlug(data: Record<string, unknown>, excludeId?: string) {
     if (!slugFrom) return;
@@ -73,14 +78,20 @@ export function crudFactory(model: Model<any>, options: CrudOptions) {
     },
 
     create: async (req: Request, res: Response) => {
-      const data = sanitize(req.body ?? {});
+      let data = sanitize(req.body ?? {});
+      if (validate) data = await validate(data, {});
       await ensureSlug(data);
       const item = await model.create(data);
       sendSuccess(res, item, { message: `${name} created`, status: 201 });
     },
 
     update: async (req: Request, res: Response) => {
-      const data = sanitize(req.body ?? {});
+      let data = sanitize(req.body ?? {});
+      if (validate) {
+        const existing = await model.findById(req.params.id).lean<Record<string, unknown>>();
+        if (!existing) throw ApiError.notFound(name);
+        data = await validate(data, { existing, id: String(req.params.id) });
+      }
       await ensureSlug(data, String(req.params.id));
       const item = await model.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
       if (!item) throw ApiError.notFound(name);

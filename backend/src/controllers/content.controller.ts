@@ -10,11 +10,21 @@ import { sendSuccess } from '../utils/response';
 /** Server-driven home content: banners, offers and settings arrive as data (see PDF takeaway #3). */
 export async function homeContent(_req: Request, res: Response) {
   const now = new Date();
-  const [banners, coupons, settings] = await Promise.all([
-    Banner.find({ active: true }).sort({ placement: 1, order: 1 }),
-    Coupon.find({ active: true, showOnHome: true, validTo: { $gte: now } }).sort({ createdAt: -1 }).limit(12),
-    getSettings(),
-  ]);
+  const [banners, settings] = await Promise.all([Banner.find({ active: true }).sort({ placement: 1, order: 1 }), getSettings()]);
+  // Only advertise coupons a customer can actually redeem right now; none while coupons are switched off.
+  const coupons =
+    settings.features?.coupons === false
+      ? []
+      : await Coupon.find({
+          active: true,
+          showOnHome: true,
+          validFrom: { $lte: now },
+          validTo: { $gte: now },
+          $or: [{ usageLimit: { $lte: 0 } }, { $expr: { $lt: ['$usedCount', '$usageLimit'] } }],
+        })
+          .select('-usedCount -usageLimit -perUserLimit')
+          .sort({ createdAt: -1 })
+          .limit(12);
   sendSuccess(res, { banners, coupons, settings });
 }
 

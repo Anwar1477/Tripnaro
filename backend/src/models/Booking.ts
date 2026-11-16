@@ -61,7 +61,19 @@ const bookingSchema = new Schema(
       total: { type: Number, required: true },
       breakdown: { type: [{ label: String, amount: Number }], default: [] },
     },
-    coupon: { code: String, discount: Number },
+    /**
+     * Snapshot of the coupon at booking time (re-validated when payment starts).
+     * `claimed` marks that this booking holds one of the coupon's usage slots. Bookings created
+     * before slot-claiming existed have no flag and are counted on payment instead.
+     */
+    coupon: {
+      code: String,
+      title: String,
+      discountType: { type: String, enum: ['percent', 'flat'] },
+      value: Number,
+      discount: Number,
+      claimed: Boolean,
+    },
 
     holdExpiresAt: Date, // unpaid bookings release inventory after this time
     cancellation: {

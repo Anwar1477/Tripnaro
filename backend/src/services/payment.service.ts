@@ -4,7 +4,7 @@ import { Payment, type PaymentProviderName } from '../models/Payment';
 import { VisaApplication } from '../models/Visa';
 import { ApiError } from '../utils/ApiError';
 import { randomToken } from '../utils/helpers';
-import { confirmBookingPayment, markBookingPaymentFailed } from './booking.service';
+import { confirmBookingPayment, markBookingPaymentFailed, revalidateBookingCoupon } from './booking.service';
 import { notifyUser } from './notification.service';
 import { paymentAdapters } from './payments';
 
@@ -34,6 +34,8 @@ export async function initiatePayment({ userId, provider, bookingId, visaApplica
     if (booking.holdExpiresAt && booking.holdExpiresAt < new Date()) {
       throw ApiError.badRequest('The payment window for this booking has expired. Please book again.');
     }
+    // Re-check the coupon with current admin settings; re-prices the booking (409) if it changed.
+    await revalidateBookingCoupon(booking, provider);
     amount = booking.pricing!.total;
     description = `${booking.reference} · ${booking.title}`;
     customer = { name: booking.contact!.name, email: booking.contact!.email, phone: booking.contact!.phone };

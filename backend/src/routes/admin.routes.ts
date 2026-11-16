@@ -12,6 +12,7 @@ import { Hotel } from '../models/Hotel';
 import { Room } from '../models/Room';
 import { Tour } from '../models/Tour';
 import { VisaCountry } from '../models/Visa';
+import { validateCouponAdmin } from '../validators/coupon.validator';
 
 const router = Router();
 router.use(authenticate, authorize('admin'));
@@ -36,7 +37,8 @@ resource('flights', crudFactory(Flight, { name: 'Flight schedule', searchFields:
 resource('airports', crudFactory(Airport, { name: 'Airport', searchFields: ['code', 'city', 'name'], sort: { city: 1 } }));
 resource('buses', crudFactory(Bus, { name: 'Bus', searchFields: ['operator.name', 'from', 'to', 'coachNumber'], filterFields: ['from', 'to', 'active'], sort: { from: 1, departureTime: 1 } }));
 resource('visa-countries', crudFactory(VisaCountry, { name: 'Visa service', searchFields: ['country'], filterFields: ['published'], slugFrom: 'country', sort: { country: 1 } }));
-resource('coupons', crudFactory(Coupon, { name: 'Coupon', searchFields: ['code', 'title'], filterFields: ['active'] }));
+router.get('/coupon-stats', admin.couponStats);
+resource('coupons', crudFactory(Coupon, { name: 'Coupon', searchFields: ['code', 'title'], filterFields: ['active', 'discountType'], validate: validateCouponAdmin }));
 resource('banners', crudFactory(Banner, { name: 'Banner', searchFields: ['title'], filterFields: ['placement', 'active'], sort: { placement: 1, order: 1 } }));
 resource('tour-requests', crudFactory(TourRequest, { name: 'Tour request', searchFields: ['name', 'email', 'destination'], filterFields: ['status'] }));
 

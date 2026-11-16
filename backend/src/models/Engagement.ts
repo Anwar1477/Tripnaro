@@ -46,8 +46,14 @@ const couponSchema = new Schema(
     paymentChannel: String, // optional, e.g. bkash
     validFrom: { type: Date, default: Date.now },
     validTo: { type: Date, required: true },
-    usageLimit: { type: Number, default: 0 }, // 0 = unlimited
-    usedCount: { type: Number, default: 0 },
+    usageLimit: { type: Number, default: 0, min: 0 }, // 0 = unlimited
+    perUserLimit: { type: Number, default: 0, min: 0 }, // 0 = unlimited
+    /**
+     * Usage slots currently claimed: bookings on hold plus paid bookings. A slot is claimed
+     * atomically when a booking is created and released if that booking is cancelled or its
+     * hold expires, so failed bookings never consume the limit (see coupon.service.ts).
+     */
+    usedCount: { type: Number, default: 0, min: 0 },
     showOnHome: { type: Boolean, default: true },
     active: { type: Boolean, default: true, index: true },
   },
@@ -108,13 +114,29 @@ const settingSchema = new Schema(
     currency: { type: String, default: 'BDT' },
     serviceFeePercent: { type: Number, default: 2 },
     noticeBar: { text: String, link: String, active: { type: Boolean, default: false } },
-    social: { facebook: String, instagram: String, youtube: String, linkedin: String },
+    social: { facebook: String, instagram: String, youtube: String, linkedin: String, x: String },
+    // Floating "Chat on Messenger" launcher. Opens https://m.me/<pageUsername> (Meta's supported
+    // entry point since the Customer Chat plugin was retired on 9 May 2024). When pageUsername is
+    // empty the frontend falls back to its MESSENGER_PAGE environment variable.
+    messenger: {
+      enabled: { type: Boolean, default: true },
+      pageUsername: {
+        type: String,
+        trim: true,
+        maxlength: 64,
+        // Facebook Page username (letters, digits, dots) or numeric Page ID. Empty is allowed.
+        match: [/^$|^[A-Za-z0-9.]{3,64}$/, 'Messenger page must be a Facebook Page username or numeric Page ID'],
+      },
+      greeting: { type: String, trim: true, maxlength: 160 },
+    },
     features: {
       flights: { type: Boolean, default: true },
       hotels: { type: Boolean, default: true },
       tours: { type: Boolean, default: true },
       buses: { type: Boolean, default: true },
       visa: { type: Boolean, default: true },
+      // Global coupon switch. Off: no coupon UI, and the API rejects every coupon (quote, booking, payment).
+      coupons: { type: Boolean, default: true },
     },
   },
   { timestamps: true },

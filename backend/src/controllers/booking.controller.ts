@@ -1,14 +1,18 @@
 import type { Request, Response } from 'express';
 import { Booking } from '../models/Booking';
-import { cancelBooking, createBooking, quoteBooking } from '../services/booking.service';
+import { cancelBooking, createBooking, quoteBooking, removeBookingCoupon } from '../services/booking.service';
 import { evaluateCoupon } from '../services/coupon.service';
 import { ApiError } from '../utils/ApiError';
 import { buildMeta, getPagination, str } from '../utils/query';
 import { sendSuccess } from '../utils/response';
 
+/**
+ * Price quote. A rejected coupon does not fail the quote: the plain price comes back with
+ * `couponError`, so the summary never shows a discount the server has not confirmed.
+ */
 export async function quote(req: Request, res: Response) {
-  const { pricing, coupon } = await quoteBooking(req.body);
-  sendSuccess(res, { pricing, coupon });
+  const { pricing, coupon, couponError, couponsEnabled } = await quoteBooking(req.body, { userId: req.user?.id, soft: true });
+  sendSuccess(res, { pricing, coupon, couponError, couponsEnabled });
 }
 
 export async function create(req: Request, res: Response) {
@@ -79,7 +83,17 @@ export async function requestRefund(req: Request, res: Response) {
   sendSuccess(res, booking, { message: 'Refund requested' });
 }
 
+/**
+ * Informational eligibility check against a client-supplied amount. It never affects a price:
+ * bookings are always priced by quoteBooking / createBooking on the server.
+ */
 export async function validateCoupon(req: Request, res: Response) {
-  const result = await evaluateCoupon(req.body.code, req.body.type, req.body.amount);
+  const result = await evaluateCoupon(req.body.code, req.body.type, req.body.amount, { userId: req.user?.id });
   sendSuccess(res, result, { message: `Coupon applied: you save BDT ${result.discount}` });
+}
+
+export async function removeCoupon(req: Request, res: Response) {
+  const booking = await Booking.findOne({ _id: req.params.id, user: req.user!.id });
+  if (!booking) throw ApiError.notFound('Booking');
+  sendSuccess(res, await removeBookingCoupon(booking), { message: 'Coupon removed' });
 }

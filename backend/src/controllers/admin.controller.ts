@@ -2,11 +2,12 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env';
 import { Booking, BOOKING_STATUSES } from '../models/Booking';
-import { Newsletter, Review, Setting } from '../models/Engagement';
+import { Coupon, Newsletter, Review, Setting } from '../models/Engagement';
 import { Payment } from '../models/Payment';
 import { User } from '../models/User';
 import { VISA_STATUSES, VisaApplication } from '../models/Visa';
 import { cancelBooking, confirmBookingPayment } from '../services/booking.service';
+import { couponsEnabled } from '../services/coupon.service';
 import { emailTemplates } from '../services/email.service';
 import { notifyUser } from '../services/notification.service';
 import { ApiError } from '../utils/ApiError';
@@ -309,6 +310,45 @@ export async function listSubscribers(req: Request, res: Response) {
 export async function deleteSubscriber(req: Request, res: Response) {
   await Newsletter.findByIdAndDelete(req.params.id);
   sendSuccess(res, null, { message: 'Subscriber removed' });
+}
+
+/* ───────── Coupons ───────── */
+
+/**
+ * Usage statistics per coupon, computed from bookings (the source of truth for redemptions):
+ * redeemed = paid and not cancelled, onHold = unpaid bookings whose hold is still running.
+ */
+export async function couponStats(_req: Request, res: Response) {
+  const now = new Date();
+  const [rows, coupons, enabled] = await Promise.all([
+    Booking.aggregate<{ _id: string; redeemed: number; onHold: number; discountGiven: number; revenue: number }>([
+      { $match: { 'coupon.code': { $exists: true, $ne: null }, status: { $ne: 'cancelled' } } },
+      {
+        $group: {
+          _id: '$coupon.code',
+          redeemed: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, 1, 0] } },
+          onHold: { $sum: { $cond: [{ $and: [{ $ne: ['$paymentStatus', 'paid'] }, { $gt: ['$holdExpiresAt', now] }] }, 1, 0] } },
+          discountGiven: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, '$coupon.discount', 0] } },
+          revenue: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'paid'] }, '$pricing.total', 0] } },
+        },
+      },
+      { $sort: { redeemed: -1 } },
+    ]),
+    Coupon.find().select('code active validFrom validTo usageLimit usedCount').lean(),
+    couponsEnabled(),
+  ]);
+  const live = coupons.filter((c) => c.active && (!c.validFrom || c.validFrom <= now) && c.validTo >= now).length;
+  sendSuccess(res, {
+    enabled,
+    totals: {
+      coupons: coupons.length,
+      live,
+      redeemed: rows.reduce((n, r) => n + r.redeemed, 0),
+      onHold: rows.reduce((n, r) => n + r.onHold, 0),
+      discountGiven: rows.reduce((n, r) => n + r.discountGiven, 0),
+    },
+    byCode: rows.map((r) => ({ code: r._id, redeemed: r.redeemed, onHold: r.onHold, discountGiven: r.discountGiven, revenue: r.revenue })),
+  });
 }
 
 /* ───────── Settings & uploads ───────── */
