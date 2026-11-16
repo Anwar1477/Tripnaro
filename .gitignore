@@ -3,6 +3,8 @@ node_modules/
 dist/
 .env
 .env.local
+.env.*.local
+.env.production
 backend/uploads/public/*
 backend/uploads/private/*
 !backend/uploads/**/.gitkeep

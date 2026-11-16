@@ -309,7 +309,7 @@ function assertSafeProductionConfig() {
   if (env.SEED_ADMIN_PASSWORD === DEFAULT_ADMIN_PASSWORD) {
     throw new Error('Set SEED_ADMIN_PASSWORD to a strong, non-default password for the production admin.');
   }
-  if (/127.0.0.1|localhost|[::1]/i.test(env.MONGODB_URI)) throw new Error('MONGODB_URI points at a local database, not production.');
+  if (/127\.0\.0\.1|localhost|\[::1\]/i.test(env.MONGODB_URI)) throw new Error('MONGODB_URI points at a local database, not production.');
 }
 
 async function assertSafeProductionTarget() {
