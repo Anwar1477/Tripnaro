@@ -7,6 +7,7 @@ import { Payment } from '../models/Payment';
 import { User } from '../models/User';
 import { VISA_STATUSES, VisaApplication } from '../models/Visa';
 import { cancelBooking, confirmBookingPayment } from '../services/booking.service';
+import { saveUpload } from '../services/storage.service';
 import { couponsEnabled } from '../services/coupon.service';
 import { emailTemplates } from '../services/email.service';
 import { notifyUser } from '../services/notification.service';
@@ -368,7 +369,9 @@ export async function updateSiteSettings(req: Request, res: Response) {
 export async function uploadImages(req: Request, res: Response) {
   const files = (req.files as Express.Multer.File[]) ?? [];
   if (!files.length) throw ApiError.badRequest('No images uploaded');
-  sendSuccess(res, files.map((f) => ({ url: `${env.API_PUBLIC_URL}/uploads/${f.filename}`, name: f.originalname, size: f.size })), {
+  const saved = [];
+  for (const f of files) saved.push({ url: `${env.API_PUBLIC_URL}/uploads/${await saveUpload('public', f)}`, name: f.originalname, size: f.size });
+  sendSuccess(res, saved, {
     message: 'Uploaded',
     status: 201,
   });

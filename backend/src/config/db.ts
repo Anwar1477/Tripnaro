@@ -14,3 +14,18 @@ export async function connectDatabase(): Promise<typeof mongoose> {
 export async function disconnectDatabase(): Promise<void> {
   await mongoose.disconnect();
 }
+
+let pending: Promise<typeof mongoose> | null = null;
+
+/**
+ * Serverless (Vercel): reuse one connection per warm function instance. A failed attempt is
+ * forgotten so the next request retries instead of failing forever.
+ */
+export function ensureDatabase(): Promise<typeof mongoose> {
+  if (mongoose.connection.readyState === 1) return Promise.resolve(mongoose);
+  pending ??= connectDatabase().catch((err) => {
+    pending = null;
+    throw err;
+  });
+  return pending;
+}

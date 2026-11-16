@@ -1,9 +1,7 @@
-import fs from 'fs';
-import path from 'path';
 import type { Request, Response } from 'express';
-import { PRIVATE_UPLOADS } from '../middlewares/upload';
 import { VisaApplication, VisaCountry } from '../models/Visa';
 import { notifyUser } from '../services/notification.service';
+import { deleteUploads, openUpload, saveUpload } from '../services/storage.service';
 import { ApiError } from '../utils/ApiError';
 import { generateReference, parseDateOnly } from '../utils/helpers';
 import { buildMeta, escapeRegex, getPagination, str } from '../utils/query';
@@ -24,13 +22,11 @@ export async function getCountry(req: Request, res: Response) {
   sendSuccess(res, country);
 }
 
-function removeFiles(files: Express.Multer.File[]) {
-  for (const f of files) fs.promises.unlink(f.path).catch(() => undefined);
-}
 
 /** multipart/form-data: field `data` (JSON) + files `documents[]` with labels in `labels` (JSON array). */
 export async function apply(req: Request, res: Response) {
   const files = (req.files as Express.Multer.File[]) ?? [];
+  const stored: string[] = [];
   try {
     let payload: unknown;
     let labels: string[] = [];
@@ -54,6 +50,9 @@ export async function apply(req: Request, res: Response) {
     const travelDate = parseDateOnly(input.travelDate);
     if (travelDate < new Date()) throw ApiError.badRequest('Travel date must be in the future');
 
+    // Validated: now persist the files (private storage).
+    for (const f of files) stored.push(await saveUpload('private', f));
+
     const application = await VisaApplication.create({
       reference: generateReference('visa'),
       user: req.user!.id,
@@ -68,7 +67,7 @@ export async function apply(req: Request, res: Response) {
       documents: files.map((f, i) => ({
         label: labels[i] ?? `Document ${i + 1}`,
         originalName: f.originalname.slice(0, 120),
-        storedName: f.filename,
+        storedName: stored[i],
         mimeType: f.mimetype,
         size: f.size,
       })),
@@ -83,7 +82,7 @@ export async function apply(req: Request, res: Response) {
     });
     sendSuccess(res, application, { message: 'Application submitted', status: 201 });
   } catch (err) {
-    removeFiles(files);
+    await deleteUploads('private', stored);
     throw err;
   }
 }
@@ -122,10 +121,10 @@ export async function downloadDocument(req: Request, res: Response) {
   if (!app || (String(app.user) !== req.user!.id && req.user!.role !== 'admin')) throw ApiError.notFound('Application');
   const doc = app.documents.find((d) => String(d._id) === req.params.docId);
   if (!doc?.storedName) throw ApiError.notFound('Document');
-  const filePath = path.join(PRIVATE_UPLOADS, path.basename(doc.storedName));
-  if (!fs.existsSync(filePath)) throw ApiError.notFound('Document file');
-  res.setHeader('Content-Type', doc.mimeType ?? 'application/octet-stream');
+  const file = await openUpload('private', doc.storedName);
+  if (!file) throw ApiError.notFound('Document file');
+  res.setHeader('Content-Type', doc.mimeType ?? file.contentType);
   res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.originalName ?? 'document')}"`);
   res.setHeader('Cache-Control', 'private, no-store');
-  fs.createReadStream(filePath).pipe(res);
+  file.stream.pipe(res);
 }

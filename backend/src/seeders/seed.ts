@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import mongoose from 'mongoose';
 import { connectDatabase } from '../config/db';
 import { env } from '../config/env';
@@ -294,8 +295,33 @@ const visaCountries = [
 
 /* ─────────────── Runner ─────────────── */
 
+/**
+ * `npm run seed` (development): wipes every collection and loads the demo catalogue.
+ * `npm run seed:production`: the same data, once, into a NEW production database. It refuses to
+ * run if the database already has any users, bookings or catalogue, refuses the default admin
+ * password, gives the demo customer a random password and never prints passwords.
+ */
+const PRODUCTION = process.argv.includes('--production');
+const DEFAULT_ADMIN_PASSWORD = 'Admin@12345';
+const demoUserPassword = PRODUCTION ? randomBytes(24).toString('base64url') : 'User@12345';
+
+function assertSafeProductionConfig() {
+  if (env.SEED_ADMIN_PASSWORD === DEFAULT_ADMIN_PASSWORD) {
+    throw new Error('Set SEED_ADMIN_PASSWORD to a strong, non-default password for the production admin.');
+  }
+  if (/127.0.0.1|localhost|[::1]/i.test(env.MONGODB_URI)) throw new Error('MONGODB_URI points at a local database, not production.');
+}
+
+async function assertSafeProductionTarget() {
+  const counts = await Promise.all([User, Booking, Payment, Hotel, Tour, Flight, Bus, VisaCountry, Setting].map((m) => (m as unknown as typeof User).estimatedDocumentCount()));
+  const total = counts.reduce((a, b) => a + b, 0);
+  if (total > 0) throw new Error(`Refusing to seed: the database already contains ${total} document(s). Production data is never overwritten.`);
+}
+
 async function seed() {
+  if (PRODUCTION) assertSafeProductionConfig();
   await connectDatabase();
+  if (PRODUCTION) await assertSafeProductionTarget();
   console.log('🌱 Clearing collections…');
   await Promise.all(
     [Airport, Banner, Booking, Bus, Coupon, Destination, Flight, Hotel, Newsletter, Notification, Payment, Review, Room, Setting, Tour, TourRequest, User, VisaApplication, VisaCountry, Wishlist].map(
@@ -309,7 +335,7 @@ async function seed() {
   const demoUser = await User.create({
     name: 'Nusrat Jahan',
     email: 'user@tripnaro.com',
-    password: 'User@12345',
+    password: demoUserPassword,
     phone: '+8801811223344',
     nationality: 'Bangladeshi',
     gender: 'female',
@@ -552,8 +578,13 @@ async function seed() {
   ]);
 
   console.log('\n✅ Seed complete');
-  console.log(`   Admin:     ${admin.email} / ${env.SEED_ADMIN_PASSWORD}`);
-  console.log('   Demo user: user@tripnaro.com / User@12345');
+  if (PRODUCTION) {
+    console.log(`   Admin:     ${admin.email} (password: the SEED_ADMIN_PASSWORD you set)`);
+    console.log('   Demo customer user@tripnaro.com has a random password (reset it from the admin panel if needed).');
+  } else {
+    console.log(`   Admin:     ${admin.email} / ${env.SEED_ADMIN_PASSWORD}`);
+    console.log('   Demo user: user@tripnaro.com / User@12345');
+  }
   await mongoose.disconnect();
 }
 

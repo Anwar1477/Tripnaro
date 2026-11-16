@@ -1,19 +1,21 @@
 {
   "name": "tripnaro-backend",
   "version": "1.0.0",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "seed": "tsx src/seeders/seed.ts",
-    "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
-    "format": "prettier --write \"src/**/*.ts\""
+    "lint": "eslint src api",
+    "typecheck": "tsc --noEmit -p tsconfig.api.json",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "seed:production": "tsx src/seeders/seed.ts --production"
   },
   "license": "UNLICENSED",
   "description": "Tripnaro travel booking REST API (Express + MongoDB)",
   "dependencies": {
+    "@vercel/blob": "^2.9.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

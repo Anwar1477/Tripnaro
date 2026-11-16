@@ -16,7 +16,12 @@ import { formatPrice, todayInput } from "@/lib/utils";
 import { visaService } from "@/services";
 import type { VisaApplication, VisaCountry } from "@/types";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+/**
+ * Documents are sent in one request, and hosting (Vercel Functions) caps a request body at 4.5 MB.
+ * Keep the whole set under 4 MB so form fields and multipart overhead still fit.
+ */
+const MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 const ACCEPT = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 
 const schema = z
@@ -72,7 +77,12 @@ export function VisaApplyForm({ country }: { country: VisaCountry }) {
   function pick(label: string, file?: File) {
     setFileError(null);
     if (file && !ACCEPT.includes(file.type)) return setFileError(`${file.name}: only PDF, JPG, PNG or WEBP files are accepted`);
-    if (file && file.size > MAX_BYTES) return setFileError(`${file.name} is larger than 5 MB`);
+    if (file) {
+      const others = Object.entries(files).reduce((sum, [l, f]) => sum + (l !== label && f ? f.size : 0), 0);
+      if (others + file.size > MAX_TOTAL_BYTES) {
+        return setFileError(`${file.name} (${mb(file.size)}) would take your documents over the 4 MB total. Please upload a smaller scan or photo.`);
+      }
+    }
     setFiles((f) => ({ ...f, [label]: file }));
   }
 
@@ -148,7 +158,7 @@ export function VisaApplyForm({ country }: { country: VisaCountry }) {
 
         <section className="card p-5 sm:p-6" aria-labelledby="docs-h">
           <h2 id="docs-h" className="text-lg font-bold">Documents</h2>
-          <p className="mt-1 text-sm text-ink-500">PDF, JPG, PNG or WEBP, up to 5 MB each. Files are stored privately and only visible to you and our visa team.</p>
+          <p className="mt-1 text-sm text-ink-500">PDF, JPG, PNG or WEBP, up to 4 MB in total. Files are stored privately and only visible to you and our visa team.</p>
           <ul className="mt-4 space-y-3">
             {docLabels.map((label, i) => {
               const f = files[label];

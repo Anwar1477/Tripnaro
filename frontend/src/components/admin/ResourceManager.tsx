@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { ExternalLink, ImagePlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useAsync } from "@/hooks/useAsync";
 import { useDebounce } from "@/hooks/useDebounce";
-import { api, errorMessage, get, getPaginated, send, toApiError } from "@/lib/api";
+import { api, errorMessage, get, getPaginated, send, toApiError, ApiRequestError } from "@/lib/api";
 import { cn, formatDate, formatPrice } from "@/lib/utils";
 import { toast } from "@/store/toast";
 import { Button } from "../common/Button";
@@ -16,12 +16,22 @@ import { getPath, setPath, type FieldDef, type ResourceDef } from "./resources";
 
 type Doc = Record<string, unknown> & { _id: string };
 
+/** Hosting (Vercel Functions) caps a request body at 4.5 MB, so images go up one per request. */
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+
 export async function uploadImages(files: FileList | File[]): Promise<string[]> {
-  const form = new FormData();
-  Array.from(files).forEach((f) => form.append("images", f));
+  const list = Array.from(files);
+  const tooBig = list.find((f) => f.size > MAX_IMAGE_BYTES);
+  if (tooBig) throw new ApiRequestError(`${tooBig.name} is larger than 4 MB. Please resize or compress it.`, 413, "FILE_TOO_LARGE");
+  const urls: string[] = [];
   try {
-    const { data } = await api.post("/admin/uploads", form, { headers: { "Content-Type": "multipart/form-data" }, timeout: 60_000 });
-    return (data.data as { url: string }[]).map((u) => u.url);
+    for (const f of list) {
+      const form = new FormData();
+      form.append("images", f);
+      const { data } = await api.post("/admin/uploads", form, { headers: { "Content-Type": "multipart/form-data" }, timeout: 60_000 });
+      urls.push(...(data.data as { url: string }[]).map((u) => u.url));
+    }
+    return urls;
   } catch (err) {
     throw toApiError(err);
   }

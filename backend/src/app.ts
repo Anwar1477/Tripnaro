@@ -7,8 +7,8 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { env, isProd } from './config/env';
 import { errorHandler, notFoundHandler } from './middlewares/error';
-import { PUBLIC_UPLOADS } from './middlewares/upload';
 import apiRoutes from './routes';
+import { openUpload } from './services/storage.service';
 
 export function createApp() {
   const app = express();
@@ -24,8 +24,19 @@ export function createApp() {
 
   app.use('/api', rateLimit({ windowMs: 60_000, limit: isProd ? 300 : 3000, standardHeaders: true, legacyHeaders: false }));
 
-  // Only admin-uploaded public images are served statically. Visa documents live in uploads/private.
-  app.use('/uploads', express.static(PUBLIC_UPLOADS, { maxAge: '7d', index: false }));
+  // Admin-uploaded public images (local disk or Vercel Blob). Visa documents are never served here.
+  // Stored names are random and never reused, so responses can be cached for a long time.
+  app.get('/uploads/:name', async (req, res, next) => {
+    try {
+      const file = await openUpload('public', req.params.name);
+      if (!file) return next();
+      res.setHeader('Content-Type', file.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      file.stream.on('error', next).pipe(res);
+    } catch (err) {
+      next(err);
+    }
+  });
 
   app.get('/health', (_req, res) => {
     const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] ?? 'unknown';
