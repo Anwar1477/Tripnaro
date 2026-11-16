@@ -3,16 +3,32 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Bell, ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Phone, Shield, Ticket, User as UserIcon, X } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  Compass,
+  Heart,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Phone,
+  Shield,
+  Ticket,
+  User as UserIcon,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { siteConfig } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 import { toast } from "@/store/toast";
 import { buttonClasses } from "../common/Button";
 import { Logo } from "./Logo";
 import { PRIMARY_NAV } from "./nav";
+import { ThemeSwitcher, ThemeToggle } from "./ThemeToggle";
 
-export function Header() {
+export function Header({ phone = siteConfig.phone }: { phone?: string }) {
   const pathname = usePathname();
+  const tel = `tel:${phone.replace(/[^\d+]/g, "")}`;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -37,62 +53,107 @@ export function Header() {
 
   if (pathname.startsWith("/admin")) return null;
 
+  // The mobile menu is a sibling of <header>, not a child: the header's backdrop-filter makes it the
+  // containing block for fixed descendants, which collapsed the full-screen menu to zero height.
   return (
-    <header className={cn("sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow", scrolled ? "border-ink-100 shadow-sm" : "border-transparent")}>
-      <div className="container-page flex h-16 items-center gap-6">
-        <Logo />
-        <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
-          {PRIMARY_NAV.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(`${href}/`);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-3 py-2 text-[15px] font-semibold transition",
-                  active ? "bg-brand-50 text-brand-700" : "text-ink-600 hover:bg-ink-50 hover:text-ink-900",
-                )}
-              >
-                <Icon className="size-[18px]" aria-hidden />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <a href="tel:+8809612345678" className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-ink-600 hover:bg-ink-50 xl:flex">
-            <Phone className="size-4 text-brand-600" aria-hidden /> 09612-345678
-          </a>
-          <AccountMenu />
-          <button type="button" onClick={() => setMobileOpen((o) => !o)} className="grid size-10 place-items-center rounded-lg text-ink-700 hover:bg-ink-100 lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen}>
-            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
+    <>
+      <header
+        className={cn(
+          "bg-surface/95 sticky top-0 z-50 border-b backdrop-blur transition-shadow",
+          scrolled ? "border-ink-100 shadow-sm" : "border-transparent",
+        )}
+      >
+        <div className="container-page flex h-16 items-center gap-6">
+          <Logo />
+          <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+            {PRIMARY_NAV.map(({ label, href, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(`${href}/`);
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg px-3 py-2 text-[15px] font-semibold transition",
+                    active
+                      ? "bg-brand-50 text-brand-700"
+                      : "text-ink-600 hover:bg-ink-50 hover:text-ink-900",
+                  )}
+                >
+                  <Icon className="size-[18px]" aria-hidden />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <a
+              href={tel}
+              className="text-ink-600 hover:bg-ink-50 hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap xl:flex"
+            >
+              <Phone className="text-brand-600 size-4" aria-hidden /> {phone}
+            </a>
+            <ThemeToggle className="hidden lg:grid" />
+            <AccountMenu />
+            <button
+              type="button"
+              onClick={() => setMobileOpen((o) => !o)}
+              className="text-ink-700 hover:bg-ink-100 grid size-10 place-items-center rounded-lg lg:hidden"
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+            >
+              {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
         </div>
-      </div>
-      {mobileOpen && <MobileNav pathname={pathname} />}
-    </header>
+      </header>
+      {mobileOpen && <MobileNav pathname={pathname} phone={phone} tel={tel} />}
+    </>
   );
 }
 
-function MobileNav({ pathname }: { pathname: string }) {
+function MobileNav({ pathname, phone, tel }: { pathname: string; phone: string; tel: string }) {
   const { user } = useAuth();
   return (
-    <div className="fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto border-t border-ink-100 bg-white lg:hidden">
+    <div
+      id="mobile-menu"
+      className="border-ink-100 bg-surface fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto border-t lg:hidden"
+    >
       <nav aria-label="Mobile" className="container-page grid grid-cols-2 gap-2 py-5">
         {PRIMARY_NAV.map(({ label, href, icon: Icon }) => (
-          <Link key={href} href={href} className={cn("flex items-center gap-3 rounded-xl border px-4 py-3.5 font-semibold", pathname.startsWith(href) ? "border-brand-200 bg-brand-50 text-brand-700" : "border-ink-100 text-ink-700")}>
-            <span className="grid size-9 place-items-center rounded-lg bg-white text-brand-600 shadow-sm">
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex items-center gap-3 rounded-xl border px-4 py-3.5 font-semibold",
+              pathname.startsWith(href)
+                ? "border-brand-200 bg-brand-50 text-brand-700"
+                : "border-ink-100 text-ink-700",
+            )}
+          >
+            <span className="bg-surface text-brand-600 grid size-9 place-items-center rounded-lg shadow-sm">
               <Icon className="size-[18px]" />
             </span>
             {label}
           </Link>
         ))}
-        <Link href="/destinations" className="flex items-center gap-3 rounded-xl border border-ink-100 px-4 py-3.5 font-semibold text-ink-700">
+        <Link
+          href="/destinations"
+          className={cn(
+            "flex items-center gap-3 rounded-xl border px-4 py-3.5 font-semibold",
+            pathname.startsWith("/destinations")
+              ? "border-brand-200 bg-brand-50 text-brand-700"
+              : "border-ink-100 text-ink-700",
+          )}
+        >
+          <span className="bg-surface text-brand-600 grid size-9 place-items-center rounded-lg shadow-sm">
+            <Compass className="size-[18px]" />
+          </span>
           Destinations
         </Link>
       </nav>
-      <div className="container-page border-t border-ink-100 py-5">
+      <div className="container-page border-ink-100 border-t py-5">
         {user ? (
           <div className="grid gap-1">
             {[
@@ -101,7 +162,11 @@ function MobileNav({ pathname }: { pathname: string }) {
               ["/my-account/wishlist", "Wishlist"],
               ...(user.role === "admin" ? [["/admin", "Admin panel"]] : []),
             ].map(([href, label]) => (
-              <Link key={href} href={href} className="rounded-lg px-3 py-2.5 font-medium text-ink-700 hover:bg-ink-50">
+              <Link
+                key={href}
+                href={href}
+                className="text-ink-700 hover:bg-ink-50 rounded-lg px-3 py-2.5 font-medium"
+              >
                 {label}
               </Link>
             ))}
@@ -116,8 +181,12 @@ function MobileNav({ pathname }: { pathname: string }) {
             </Link>
           </div>
         )}
-        <a href="tel:+8809612345678" className="mt-5 flex items-center gap-2 text-sm font-semibold text-ink-600">
-          <Phone className="size-4 text-brand-600" /> 24/7 support: 09612-345678
+        <p className="text-ink-500 mt-5 mb-2 text-xs font-bold tracking-wider uppercase">
+          Appearance
+        </p>
+        <ThemeSwitcher />
+        <a href={tel} className="text-ink-600 mt-5 flex items-center gap-2 text-sm font-semibold">
+          <Phone className="text-brand-600 size-4" aria-hidden /> 24/7 support: {phone}
         </a>
       </div>
     </div>
@@ -137,16 +206,25 @@ function AccountMenu() {
     setOpen(false);
   }
   useEffect(() => {
-    const onClick = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
+    const onClick = (e: MouseEvent) =>
+      ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
 
-  if (!ready) return <div className="h-10 w-24 animate-pulse rounded-lg bg-ink-100" aria-hidden />;
+  if (!ready) return <div className="bg-ink-100 h-10 w-24 animate-pulse rounded-lg" aria-hidden />;
   if (!user)
     return (
       <div className="flex items-center gap-2">
-        <Link href={`/login?next=${encodeURIComponent(pathname)}`} className={buttonClasses("ghost", "sm", "hidden sm:inline-flex")}>
+        <Link
+          href={`/login?next=${encodeURIComponent(pathname)}`}
+          className={buttonClasses("ghost", "sm", "hidden sm:inline-flex")}
+        >
           Sign in
         </Link>
         <Link href="/register" className={buttonClasses("primary", "sm")}>
@@ -155,7 +233,12 @@ function AccountMenu() {
       </div>
     );
 
-  const initials = user.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const initials = user.name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
   const items = [
     { href: "/my-account", label: "Dashboard", icon: LayoutDashboard },
     { href: "/my-account/bookings", label: "My bookings", icon: Ticket },
@@ -167,20 +250,38 @@ function AccountMenu() {
 
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu" className="flex items-center gap-2 rounded-full border border-ink-200 py-1 pr-2.5 pl-1 transition hover:border-ink-300">
-        <span className="grid size-8 place-items-center rounded-full bg-brand-600 text-xs font-bold text-white">{initials}</span>
-        <span className="hidden max-w-28 truncate text-sm font-semibold sm:block">{user.name.split(" ")[0]}</span>
-        <ChevronDown className="size-4 text-ink-500" />
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="border-ink-200 hover:border-ink-300 flex items-center gap-2 rounded-full border py-1 pr-2.5 pl-1 transition"
+      >
+        <span className="bg-brand-600 grid size-8 place-items-center rounded-full text-xs font-bold text-white">
+          {initials}
+        </span>
+        <span className="hidden max-w-28 truncate text-sm font-semibold sm:block">
+          {user.name.split(" ")[0]}
+        </span>
+        <ChevronDown className="text-ink-500 size-4" />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 mt-2 w-60 animate-fade-up rounded-xl border border-ink-100 bg-white p-1.5 shadow-(--shadow-lift)">
-          <div className="border-b border-ink-100 px-3 pt-2 pb-3">
+        <div
+          role="menu"
+          className="animate-fade-up border-ink-100 bg-surface absolute right-0 mt-2 w-60 rounded-xl border p-1.5 shadow-(--shadow-lift)"
+        >
+          <div className="border-ink-100 border-b px-3 pt-2 pb-3">
             <p className="truncate text-sm font-semibold">{user.name}</p>
-            <p className="truncate text-xs text-ink-500">{user.email}</p>
+            <p className="text-ink-500 truncate text-xs">{user.email}</p>
           </div>
           {items.map(({ href, label, icon: Icon }) => (
-            <Link key={href} role="menuitem" href={href} className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-700 hover:bg-ink-50">
-              <Icon className="size-4 text-ink-500" /> {label}
+            <Link
+              key={href}
+              role="menuitem"
+              href={href}
+              className="text-ink-700 hover:bg-ink-50 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium"
+            >
+              <Icon className="text-ink-500 size-4" /> {label}
             </Link>
           ))}
           <button
@@ -192,7 +293,7 @@ function AccountMenu() {
               router.push("/");
               router.refresh();
             }}
-            className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-coral-600 hover:bg-coral-50"
+            className="text-coral-600 hover:bg-coral-50 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium"
           >
             <LogOut className="size-4" /> Sign out
           </button>

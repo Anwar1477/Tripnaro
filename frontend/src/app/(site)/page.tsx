@@ -18,6 +18,7 @@ export const metadata = buildMetadata({
   title: "Tripnaro · Flights, Hotels, Tours, Bus & Visa",
   description: "Search and book flights, hotels, tour packages, bus tickets and visa services across Bangladesh and the world. Transparent prices, bKash & Nagad payments, 24/7 support.",
   path: "/",
+  absoluteTitle: true,
 });
 
 const HERO = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2200&q=80";
@@ -46,11 +47,12 @@ export default async function HomePage() {
 
       {/* Hero */}
       <section className="relative isolate">
-        <div className="absolute inset-0 -z-10 h-[34rem] overflow-hidden sm:h-[38rem]">
+        {/* The photo spans the whole hero, so its edge always sits below the search panel and trust row whatever tab is open. */}
+        <div className="absolute inset-0 -z-10 overflow-hidden">
           <Image src={HERO} alt="" fill priority sizes="100vw" className="object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-950/75 via-brand-950/45 to-brand-950/10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-950/75 via-brand-950/45 to-brand-950/70" />
         </div>
-        <div className="container-page pt-14 pb-10 sm:pt-20">
+        <div className="container-page pt-14 pb-12 sm:pt-20 sm:pb-14">
           <div className="max-w-3xl text-white">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur">
               <ShieldCheck className="size-4 text-coral-300" /> Verified partners · Secure local payments
@@ -63,7 +65,7 @@ export default async function HomePage() {
           <div className="mt-8 sm:mt-10">
             <SearchPanel />
           </div>
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-ink-600">
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-white/90">
             <span className="flex items-center gap-1.5">
               <Star className="size-4 fill-amber-400 text-amber-400" /> 4.8 average rating
             </span>

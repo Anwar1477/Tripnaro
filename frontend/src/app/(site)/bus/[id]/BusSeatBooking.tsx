@@ -36,7 +36,7 @@ export function BusSeatBooking({ busId }: { busId: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="seat-h" className="text-lg font-bold">Select up to {MAX_SEATS} seats</h2>
         <ul className="flex flex-wrap gap-3 text-xs text-ink-600">
-          <li className="flex items-center gap-1.5"><span className="size-4 rounded border-2 border-ink-200 bg-white" />Available</li>
+          <li className="flex items-center gap-1.5"><span className="size-4 rounded border-2 border-ink-200 bg-surface" />Available</li>
           <li className="flex items-center gap-1.5"><span className="size-4 rounded bg-brand-600" />Selected</li>
           <li className="flex items-center gap-1.5"><span className="size-4 rounded bg-ink-200" />Booked</li>
         </ul>
@@ -65,7 +65,7 @@ export function BusSeatBooking({ busId }: { busId: string }) {
                               aria-pressed={isSel}
                               aria-label={`Seat ${s}${isTaken ? " (booked)" : ""}`}
                               onClick={() => toggle(s)}
-                              className={cn("grid size-10 place-items-center rounded-lg text-[11px] font-bold transition", isTaken ? "cursor-not-allowed bg-ink-200 text-ink-400" : isSel ? "bg-brand-600 text-white shadow" : "border-2 border-ink-200 bg-white text-ink-700 hover:border-brand-400")}
+                              className={cn("grid size-10 place-items-center rounded-lg text-[11px] font-bold transition", isTaken ? "cursor-not-allowed bg-ink-200 text-ink-400" : isSel ? "bg-brand-600 text-white shadow" : "border-2 border-ink-200 bg-surface text-ink-700 hover:border-brand-400")}
                             >
                               {s}
                             </button>
@@ -101,9 +101,9 @@ export function BusSeatBooking({ busId }: { busId: string }) {
 
   if (!seats.length)
     return (
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
         {seatPicker}
-        <aside className="card self-start overflow-hidden">{summary}</aside>
+        <aside data-chat-avoid className="card self-start overflow-hidden">{summary}</aside>
       </div>
     );
 

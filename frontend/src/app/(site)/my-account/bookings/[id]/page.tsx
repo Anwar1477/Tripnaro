@@ -85,7 +85,7 @@ export default function BookingDetailPage() {
       {b.details?.isDemoInventory === true && <Alert tone="warning" className="mb-5">This booking used demo flight inventory and does not correspond to a real airline ticket.</Alert>}
       {b.refund?.status && <Alert tone="info" className="mb-5" title={`Refund ${b.refund.status}`}>{b.refund.amount ? `Amount ${formatPrice(b.refund.amount)}. ` : ""}{b.refund.reason}</Alert>}
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_20rem]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0 space-y-5">
           <section className="card p-5">
             <h2 className="font-bold">Trip details</h2>
@@ -116,7 +116,7 @@ export default function BookingDetailPage() {
           </section>
         </div>
         <aside className="space-y-4">
-          <div className="card p-5"><PriceSummary pricing={b.pricing} title="Payment summary" /></div>
+          <div className="card p-5"><PriceSummary pricing={b.pricing} coupon={b.coupon?.code ? b.coupon : null} title="Payment summary" /></div>
           {(canCancel || canRefund) && (
             <div className="card space-y-2 p-5 print:hidden">
               <p className="font-bold">Need to change plans?</p>

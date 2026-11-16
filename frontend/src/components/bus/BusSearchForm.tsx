@@ -45,7 +45,7 @@ export function BusSearchForm({ initial, compact = false }: { initial?: { from?:
           <SearchBox label="To" icon={<MapPin className="size-3.5" />}>
             <input list={listId} aria-label="Destination city" className={searchInputClass} value={to} onChange={(e) => setTo(e.target.value)} placeholder="Destination city" />
           </SearchBox>
-          <button type="button" aria-label="Swap cities" onClick={() => { setFrom(to); setTo(from); }} className="absolute top-1/2 left-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-ink-200 bg-white text-brand-700 shadow-sm transition hover:rotate-180 sm:grid">
+          <button type="button" aria-label="Swap cities" onClick={() => { setFrom(to); setTo(from); }} className="absolute top-1/2 left-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-ink-200 bg-surface text-brand-700 shadow-sm transition hover:rotate-180 sm:grid">
             <ArrowLeftRight className="size-4" />
           </button>
         </div>

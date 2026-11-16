@@ -55,7 +55,7 @@ export default async function DestinationPage({ params }: Params) {
     <div>
       <JsonLd data={placeLd} />
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Destinations", path: "/destinations" }, { name: d.country, path: `/destinations/${d.countrySlug}` }, { name: d.name, path: `/destinations/${d.slug}` }])} />
-      <section className="relative isolate overflow-hidden bg-ink-900 text-white">
+      <section className="relative isolate overflow-hidden bg-night text-white">
         <Image src={d.image} alt={d.name} fill priority sizes="100vw" className="-z-10 object-cover opacity-55" />
         <div className="container-page py-14 sm:py-24">
           <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Destinations", href: "/destinations" }, { name: d.country, href: `/destinations/${d.countrySlug}` }, { name: d.name }]} className="mb-4 text-white/80 [&_a]:text-white/80" />
@@ -68,7 +68,7 @@ export default async function DestinationPage({ params }: Params) {
         </div>
       </section>
       <div className="container-page py-10">
-        <div className="grid gap-8 lg:grid-cols-[1fr_20rem]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_20rem]">
           <section>
             <h2 className="text-xl font-bold">About {d.name}</h2>
             <p className="mt-3 leading-relaxed whitespace-pre-line text-ink-600">{d.description}</p>

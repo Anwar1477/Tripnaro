@@ -3,12 +3,13 @@ import { Megaphone } from "lucide-react";
 import { JsonLd } from "@/components/common/Misc";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { MessengerChat } from "@/components/layout/MessengerChat";
+import { resolveMessengerConfig } from "@/lib/messenger";
 import { serverGet } from "@/lib/server-api";
 import { organizationJsonLd } from "@/lib/seo";
 import type { SiteSettings } from "@/types";
 
-async function NoticeBar() {
-  const settings = await serverGet<SiteSettings>("/content/settings", 300);
+function NoticeBar({ settings }: { settings: SiteSettings | null }) {
   const notice = settings?.noticeBar;
   if (!notice?.active || !notice.text) return null;
   return (
@@ -27,15 +28,20 @@ async function NoticeBar() {
   );
 }
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  // One cached request feeds the notice bar, contact details and the Messenger launcher.
+  const settings = await serverGet<SiteSettings>("/content/settings", 300);
+  const messenger = resolveMessengerConfig(settings);
+
   return (
     <>
-      <NoticeBar />
-      <Header />
+      <NoticeBar settings={settings} />
+      <Header phone={settings?.supportPhone} />
       <main id="main" className="min-h-[60vh]">
         {children}
       </main>
-      <Footer />
+      <Footer settings={settings} />
+      {messenger && <MessengerChat page={messenger.page} greeting={messenger.greeting} phone={settings?.supportPhone} />}
       <JsonLd data={organizationJsonLd()} />
     </>
   );

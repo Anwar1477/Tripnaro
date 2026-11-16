@@ -12,7 +12,7 @@ export default async function FlightSearchPage({ searchParams }: { searchParams:
   const parsed = parseFlightSearch({ get: (k) => sp[k] ?? null });
   return (
     <>
-      <section className="border-b border-ink-100 bg-white">
+      <section className="border-b border-ink-100 bg-surface">
         <div className="container-page py-5">
           <h1 className="sr-only">Flight search results</h1>
           <FlightSearchForm compact initial={parsed?.initial} key={JSON.stringify(sp)} />

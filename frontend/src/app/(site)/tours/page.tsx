@@ -18,7 +18,7 @@ export default async function ToursPage({ searchParams }: { searchParams: Promis
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Tours", path: "/tours" }])} />
-      <section className="border-b border-ink-100 bg-white">
+      <section className="border-b border-ink-100 bg-surface">
         <div className="container-page py-6">
           <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Tours" }]} className="mb-3" />
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">

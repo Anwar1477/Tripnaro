@@ -15,7 +15,7 @@ export default function CustomRequestPage() {
   return (
     <div className="container-page py-8">
       <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Tours", href: "/tours" }, { name: "Custom request" }]} className="mb-4" />
-      <div className="grid gap-8 lg:grid-cols-[1fr_24rem]">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_24rem]">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Design your own trip</h1>
           <p className="mt-2 max-w-xl text-ink-600">Share a few details and a Tripnaro trip designer will build a tailored itinerary, with hotels, transfers and activities, and send you a quote within 24 hours.</p>

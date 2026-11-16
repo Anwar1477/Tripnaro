@@ -60,6 +60,17 @@ export default function AdminSettingsPage() {
         <h2 className="font-bold sm:col-span-2">Social links</h2>
         {SOCIAL.map((k) => <Input key={k} label={k === "x" ? "X / Twitter" : k[0].toUpperCase() + k.slice(1)} value={s.social?.[k] ?? ""} onChange={(e) => set({ social: { ...s.social, [k]: e.target.value } })} />)}
       </section>
+      <section className="card grid gap-4 p-5 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <h2 className="font-bold">Messenger live chat</h2>
+          <p className="mt-1 text-sm text-ink-500">
+            Shows a floating &ldquo;Chat on Messenger&rdquo; button that opens your Facebook Page conversation (m.me). Leave the page empty to use the <code className="rounded bg-ink-100 px-1 text-xs">MESSENGER_PAGE</code> environment variable.
+          </p>
+        </div>
+        <Checkbox label="Show the Messenger chat button" className="sm:col-span-2" checked={s.messenger?.enabled !== false} onChange={(e) => set({ messenger: { ...s.messenger, enabled: e.target.checked } })} />
+        <Input label="Facebook Page username or Page ID" placeholder="e.g. tripnaro or 102345678901234" value={s.messenger?.pageUsername ?? ""} onChange={(e) => set({ messenger: { ...s.messenger, pageUsername: e.target.value.trim() } })} hint="The part after facebook.com/ in your Page URL." />
+        <Input label="Greeting" maxLength={160} placeholder="Hi! How can we help with your trip?" value={s.messenger?.greeting ?? ""} onChange={(e) => set({ messenger: { ...s.messenger, greeting: e.target.value } })} hint="Shown in the chat panel before visitors continue to Messenger." />
+      </section>
       <Button onClick={save} loading={saving}>Save settings</Button>
       <p className="text-xs text-ink-500">Public pages refresh cached settings within a few minutes.</p>
     </div>

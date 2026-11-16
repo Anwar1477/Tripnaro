@@ -45,7 +45,9 @@ function toForm(def: ResourceDef, doc: Record<string, unknown>) {
   for (const f of def.fields) {
     let v = getPath(doc, f.name);
     if (f.kind === "ref" && v && typeof v === "object") v = (v as Doc)._id;
-    if (f.kind === "date" && v) v = String(v).slice(0, 10);
+    // Show the calendar day in Bangladesh time (the business timezone). Slicing the UTC ISO string
+    // would show 00:00 BST (18:00Z the day before) as the previous day.
+    if (f.kind === "date" && v) v = new Date(String(v)).toLocaleDateString("en-CA", { timeZone: "Asia/Dhaka" });
     if (f.kind === "json") v = JSON.stringify(v ?? (f.name.match(/s$/) ? [] : {}), null, 2);
     if (f.kind === "list") v = Array.isArray(v) ? v.join("\n") : "";
     if (f.kind === "images") v = Array.isArray(v) ? v : [];
@@ -56,7 +58,8 @@ function toForm(def: ResourceDef, doc: Record<string, unknown>) {
   return out;
 }
 
-function fromForm(def: ResourceDef, form: Record<string, unknown>): { body: Record<string, unknown>; error?: string } {
+/** `editing`: an emptied optional number/date/select is sent as null so the stored value is cleared. */
+function fromForm(def: ResourceDef, form: Record<string, unknown>, editing = false): { body: Record<string, unknown>; error?: string } {
   const body: Record<string, unknown> = {};
   for (const f of def.fields) {
     let v = form[f.name];
@@ -73,6 +76,7 @@ function fromForm(def: ResourceDef, form: Record<string, unknown>): { body: Reco
       if (v === "") v = f.name === "slug" ? undefined : f.required ? "" : undefined;
     }
     if (f.required && (v === "" || v === undefined || (Array.isArray(v) && !v.length))) return { body, error: `${f.label} is required` };
+    if (v === undefined && editing && !f.required && (f.kind === "number" || f.kind === "date" || (f.kind === "select" && !f.multiple))) v = null;
     if (v !== undefined) setPath(body, f.name, v);
   }
   return { body };
@@ -110,7 +114,7 @@ function ImagesField({ value, onChange, single }: { value: string[]; onChange: (
           {value.map((src, i) => (
             <div key={src + i} className="relative size-20 overflow-hidden rounded-lg bg-ink-100">
               <Image src={src} alt="" fill sizes="80px" className="object-cover" />
-              <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} className="absolute top-1 right-1 grid size-5 place-items-center rounded-full bg-ink-900/70 text-white" aria-label="Remove image"><X className="size-3" /></button>
+              <button type="button" onClick={() => onChange(value.filter((_, j) => j !== i))} className="absolute top-1 right-1 grid size-5 place-items-center rounded-full bg-night/70 text-white" aria-label="Remove image"><X className="size-3" /></button>
             </div>
           ))}
         </div>
@@ -190,7 +194,7 @@ function FieldInput({ field, value, onChange }: { field: FieldDef; value: unknow
     <div className={cn(field.full && "sm:col-span-2")}>
       {label}
       {control}
-      {field.hint && <p className="mt-1 text-xs break-all text-ink-500">{field.hint}</p>}
+      {field.hint && <p className="mt-1 text-xs break-words text-ink-500">{field.hint}</p>}
     </div>
   );
 }
@@ -216,7 +220,7 @@ export function ResourceManager({ def }: { def: ResourceDef }) {
   }
 
   async function save() {
-    const { body, error } = fromForm(def, form);
+    const { body, error } = fromForm(def, form, editing !== "new");
     if (error) return setFormError(error);
     setSaving(true);
     setFormError(null);
@@ -306,7 +310,7 @@ export function ResourceManager({ def }: { def: ResourceDef }) {
         <form onSubmit={(e) => { e.preventDefault(); void save(); }} className="grid gap-4 sm:grid-cols-2">
           {def.fields.map((f) => <FieldInput key={f.name} field={f} value={form[f.name]} onChange={(v) => setForm((cur) => ({ ...cur, [f.name]: v }))} />)}
           {formError && <Alert tone="error" className="sm:col-span-2">{formError}</Alert>}
-          <div className="sticky bottom-0 -mx-1 flex justify-end gap-2 bg-white pt-2 sm:col-span-2">
+          <div className="sticky bottom-0 -mx-1 flex justify-end gap-2 bg-surface pt-2 sm:col-span-2">
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
             <Button type="submit" loading={saving}>Save</Button>
           </div>

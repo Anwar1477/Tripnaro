@@ -11,7 +11,7 @@ export function MapEmbed({ lat, lng, title }: { lat: number; lng: number; title:
         loading="lazy"
         referrerPolicy="no-referrer"
       />
-      <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`} target="_blank" rel="noopener noreferrer" className="block bg-white px-4 py-2 text-xs font-semibold text-brand-700 hover:underline">
+      <a href={`https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`} target="_blank" rel="noopener noreferrer" className="block bg-surface px-4 py-2 text-xs font-semibold text-brand-700 hover:underline">
         Open larger map ↗
       </a>
     </div>

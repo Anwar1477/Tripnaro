@@ -20,7 +20,7 @@ export function TourBookingWidget({ tour }: { tour: Tour }) {
   const estimate = dep ? dep.priceAdult * adults + dep.priceChild * children : 0;
 
   return (
-    <div className="card p-5" id="book">
+    <div data-chat-avoid className="card p-5" id="book">
       <p className="text-xs font-semibold tracking-wide text-ink-500 uppercase">From</p>
       <p className="text-2xl font-bold">
         {formatPrice(tour.priceAdult)} <span className="text-sm font-normal text-ink-500">/ adult</span>

@@ -19,11 +19,11 @@ export function Modal({ open, onClose, title, children, className }: { open: boo
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
-      className={cn("m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-white p-0 shadow-(--shadow-lift) backdrop:bg-ink-900/50 backdrop:backdrop-blur-sm", className)}
+      className={cn("m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl bg-surface p-0 shadow-(--shadow-lift) backdrop:bg-night/50 backdrop:backdrop-blur-sm", className)}
     >
       {open && (
         <div className="max-h-[85vh] overflow-y-auto">
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-100 bg-white px-5 py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ink-100 bg-surface px-5 py-4">
             <h2 className="text-lg font-bold">{title}</h2>
             <button type="button" onClick={onClose} className="grid size-8 place-items-center rounded-full text-ink-500 hover:bg-ink-100" aria-label="Close">
               <X className="size-4" />

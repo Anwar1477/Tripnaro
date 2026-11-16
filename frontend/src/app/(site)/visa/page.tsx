@@ -20,10 +20,10 @@ export default async function VisaPage() {
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Visa", path: "/visa" }])} />
-      <section className="border-b border-ink-100 bg-white">
+      <section className="border-b border-ink-100 bg-surface">
         <div className="container-page py-6">
           <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Visa" }]} className="mb-3" />
-          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
             <div>
               <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">Visa services, made simple</h1>
               <p className="mt-2 max-w-xl text-ink-600">Check requirements, upload documents securely and follow every step of your application online.</p>
@@ -59,7 +59,7 @@ export default async function VisaPage() {
               <Link key={c._id} href={`/visa/${c.slug}`} className="card group overflow-hidden transition hover:shadow-(--shadow-lift)">
                 <div className="relative h-40 bg-ink-100">
                   {c.image && <Image src={c.image} alt={`${c.country}`} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition duration-500 group-hover:scale-105" />}
-                  <span className="absolute top-3 left-3 rounded-lg bg-white/95 px-2 py-1 text-lg shadow" aria-hidden>{c.flag}</span>
+                  <span className="absolute top-3 left-3 rounded-lg bg-surface/95 px-2 py-1 text-lg shadow" aria-hidden>{c.flag}</span>
                 </div>
                 <div className="p-4">
                   <p className="text-lg font-bold">{c.country}</p>

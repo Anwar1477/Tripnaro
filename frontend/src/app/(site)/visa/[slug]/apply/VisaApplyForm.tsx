@@ -87,7 +87,7 @@ export function VisaApplyForm({ country }: { country: VisaCountry }) {
 
   if (application)
     return (
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-5">
           <Alert tone="success" title={`Application ${application.reference} submitted`}>
             We&apos;ve received your documents. Pay the fee now to start processing, or later from your account.
@@ -122,7 +122,7 @@ export function VisaApplyForm({ country }: { country: VisaCountry }) {
 
   const a = errors.applicant;
   return (
-    <form noValidate onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <form noValidate onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
       <div className="min-w-0 space-y-6">
         <section className="card grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
           <h2 className="text-lg font-bold sm:col-span-2">Trip details</h2>

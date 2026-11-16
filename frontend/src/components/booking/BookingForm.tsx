@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Lock, Tag, UserRound, X } from "lucide-react";
+import { Lock, UserRound } from "lucide-react";
 import { useAsync } from "@/hooks/useAsync";
 import { useAuth } from "@/hooks/useAuth";
 import { errorMessage } from "@/lib/api";
@@ -16,6 +16,7 @@ import type { BookingType, SavedTraveler } from "@/types";
 import { Button, LinkButton } from "../common/Button";
 import { Alert, PageLoader, Skeleton } from "../common/Feedback";
 import { Checkbox, Input, Select, Textarea } from "../common/FormControls";
+import { CouponBox } from "./CouponBox";
 import { PriceSummary } from "./PriceSummary";
 
 export interface TravelerSlot {
@@ -82,19 +83,29 @@ export function BookingForm({ type, payload, travelerSlots, requireDob = false, 
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  const [couponInput, setCouponInput] = useState("");
+  // `coupon` is the code the customer asked for. Nothing about it is shown as applied until a
+  // server quote for that exact code comes back with `coupon` set.
   const [coupon, setCoupon] = useState<string>("");
   const [couponError, setCouponError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const payloadKey = JSON.stringify(payload);
-  const quote = useAsync(() => bookingService.quote({ ...payload, type, couponCode: coupon || undefined }), [payloadKey, coupon, type]);
+  const quote = useAsync(
+    async () => ({ ...(await bookingService.quote({ ...payload, type, couponCode: coupon || undefined })), requested: coupon }),
+    [payloadKey, coupon, type],
+  );
+  const fresh = quote.data && quote.data.requested === coupon ? quote.data : null;
 
-  // An invalid coupon makes the quote fail: report it and fall back to the plain price.
-  if (quote.error && coupon) {
-    setCouponError(quote.error);
+  // A rejected coupon: keep the full price, show the reason, drop the coupon (state adjusted during render).
+  if (fresh?.couponError && coupon) {
+    setCouponError(fresh.couponError.code === "COUPON_DISABLED" ? null : fresh.couponError.message);
     setCoupon("");
+    if (fresh.couponError.code === "COUPON_DISABLED") toast.info("Coupons are currently unavailable, so the full price applies.");
   }
+  const appliedCoupon = coupon && fresh?.coupon ? fresh.coupon : null;
+  // While re-quoting, an older price is still correct to show unless it carries a discount that may no longer apply.
+  const shownQuote = fresh ?? (quote.data && quote.data.pricing.discount === 0 ? quote.data : null);
+  const couponsEnabled = (fresh ?? quote.data)?.couponsEnabled ?? false;
 
   const saved = useAsync(() => accountService.travelers(), [user?._id], { enabled: !!user });
 
@@ -167,47 +178,40 @@ export function BookingForm({ type, payload, travelerSlots, requireDob = false, 
 
   const next = `${pathname}?${sp.toString()}`;
   const priceCard = (
-    <div className="card p-5">
-      {quote.loading && !quote.data ? (
+    <div data-chat-avoid className="card p-5">
+      {!shownQuote && (quote.loading || quote.data) ? (
         <div className="space-y-2">
           <Skeleton className="h-4 w-2/3" />
           <Skeleton className="h-4" />
           <Skeleton className="h-8" />
         </div>
-      ) : quote.data ? (
-        <PriceSummary pricing={quote.data.pricing} />
+      ) : shownQuote ? (
+        <PriceSummary pricing={shownQuote.pricing} coupon={appliedCoupon} />
       ) : (
         <Alert tone="error" title="Unable to price this selection">{quote.error}</Alert>
       )}
-      {user && (
+      {user && couponsEnabled && (
         <div className="mt-4 border-t border-ink-100 pt-4">
-          {coupon && quote.data?.coupon ? (
-            <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-              <span className="flex items-center gap-2 font-semibold"><Tag className="size-4" />{quote.data.coupon.code} applied</span>
-              <button type="button" onClick={() => setCoupon("")} aria-label="Remove coupon" className="rounded p-1 hover:bg-emerald-100"><X className="size-4" /></button>
-            </div>
-          ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setCouponError(null);
-                if (couponInput.trim()) setCoupon(couponInput.trim().toUpperCase());
-              }}
-              className="flex gap-2"
-            >
-              <label htmlFor="coupon" className="sr-only">Coupon code</label>
-              <input id="coupon" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="Promo code" className="field h-10 uppercase" />
-              <Button type="submit" variant="secondary" size="sm" className="h-10">Apply</Button>
-            </form>
-          )}
-          {couponError && <p className="mt-2 text-[13px] text-coral-600" role="alert">{couponError}</p>}
+          <CouponBox
+            applied={appliedCoupon}
+            pending={!!coupon && !fresh}
+            error={couponError}
+            onApply={(code) => {
+              setCouponError(null);
+              setCoupon(code);
+            }}
+            onRemove={() => {
+              setCouponError(null);
+              setCoupon("");
+            }}
+          />
         </div>
       )}
     </div>
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
       <div className="min-w-0 space-y-6">
         {!user ? (
           <div className="card p-6 text-center">
@@ -288,7 +292,7 @@ export function BookingForm({ type, payload, travelerSlots, requireDob = false, 
               />
               {errors.agree && <p className="text-[13px] text-coral-600" role="alert">{errors.agree.message}</p>}
               {submitError && <Alert tone="error" title="We couldn't create your booking">{submitError}</Alert>}
-              <Button type="submit" variant="accent" size="lg" className="w-full sm:w-auto" loading={isSubmitting} disabled={!quote.data}>
+              <Button type="submit" variant="accent" size="lg" className="w-full sm:w-auto" loading={isSubmitting} disabled={!fresh}>
                 <Lock className="size-4" /> Continue to payment
               </Button>
               <p className="text-xs text-ink-500">Your selection is held for 30 minutes while you complete payment.</p>

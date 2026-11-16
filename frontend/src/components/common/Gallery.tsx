@@ -41,7 +41,7 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
           >
             <Image src={src} alt={i === 0 ? alt : ""} fill priority={i === 0} sizes={i === 0 ? "(max-width: 640px) 100vw, 50vw" : "25vw"} className="object-cover transition duration-500 group-hover:scale-105" />
             {i === shown.length - 1 && images.length > 1 && (
-              <span className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-bold text-ink-800 shadow">
+              <span className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-lg bg-surface/95 px-3 py-1.5 text-xs font-bold text-ink-800 shadow">
                 <Images className="size-4" /> {images.length} photos
               </span>
             )}
@@ -49,7 +49,7 @@ export function Gallery({ images, alt }: { images: string[]; alt: string }) {
         ))}
       </div>
       {index !== null && (
-        <div role="dialog" aria-modal="true" aria-label="Photo viewer" className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/95 p-4">
+        <div role="dialog" aria-modal="true" aria-label="Photo viewer" className="fixed inset-0 z-[90] flex items-center justify-center bg-night/95 p-4">
           <button type="button" onClick={close} className="absolute top-4 right-4 grid size-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="Close">
             <X className="size-5" />
           </button>

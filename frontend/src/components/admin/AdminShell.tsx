@@ -10,6 +10,7 @@ import { useRequireAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { PageLoader } from "../common/Feedback";
 import { LogoMark } from "../layout/Logo";
+import { ThemeToggle } from "../layout/ThemeToggle";
 
 const NAV: { group: string; items: { href: string; label: string; Icon: typeof Users }[] }[] = [
   { group: "Overview", items: [{ href: "/admin", label: "Dashboard", Icon: BarChart3 }] },
@@ -78,19 +79,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-sand-50 lg:grid lg:grid-cols-[15.5rem_1fr]">
-      <aside className={cn("fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto bg-ink-900 transition-transform lg:sticky lg:top-0 lg:h-screen lg:w-auto lg:translate-x-0", open ? "translate-x-0" : "-translate-x-full")}>
+      <aside className={cn("fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto bg-night transition-transform lg:sticky lg:top-0 lg:h-screen lg:w-auto lg:translate-x-0", open ? "translate-x-0" : "-translate-x-full")}>
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <Link href="/admin" className="flex items-center gap-2 font-display text-lg font-semibold text-white"><LogoMark className="size-7" />tripnaro <span className="rounded bg-coral-500 px-1.5 text-[10px] font-bold tracking-wide uppercase">admin</span></Link>
           <button type="button" className="text-white lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X className="size-5" /></button>
         </div>
         {nav}
       </aside>
-      {open && <div className="fixed inset-0 z-40 bg-ink-900/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
+      {open && <div className="fixed inset-0 z-40 bg-night/40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-ink-100 bg-white/90 px-4 py-3 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-ink-100 bg-surface/90 px-4 py-3 backdrop-blur sm:px-6">
           <button type="button" className="grid size-9 place-items-center rounded-lg hover:bg-ink-100 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="size-5" /></button>
           <div className="flex items-center gap-2 text-sm text-ink-500"><ClipboardList className="hidden size-4 sm:block" /><span className="hidden sm:inline">Signed in as</span> <strong className="text-ink-800">{user.name}</strong></div>
           <div className="flex items-center gap-2">
+            <ThemeToggle className="size-9" />
             <Link href="/" target="_blank" className="hidden items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-ink-700 hover:bg-ink-100 sm:flex"><ExternalLink className="size-4" />View site</Link>
             <button type="button" onClick={() => void logout()} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-semibold text-coral-600 hover:bg-coral-50"><LogOut className="size-4" />Sign out</button>
           </div>

@@ -38,7 +38,7 @@ export function FlightOfferCard({ offer, onSelect, selected, actionLabel = "Sele
               <p className="text-xs text-ink-500">{formatDuration(offer.durationMinutes)}</p>
               <div className="relative my-1 h-px w-full bg-ink-200">
                 <Plane className="absolute -top-2 right-0 size-4 rotate-45 text-brand-600" />
-                {offer.stops > 0 && <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rounded-full border-2 border-white bg-coral-500" />}
+                {offer.stops > 0 && <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rounded-full border-2 border-surface bg-coral-500" />}
               </div>
               <p className={cn("text-xs font-semibold", offer.stops ? "text-coral-600" : "text-emerald-700")}>
                 {offer.stops === 0 ? "Non-stop" : `${offer.stops} stop · ${offer.layovers.map((l) => l.airport).join(", ")}`}

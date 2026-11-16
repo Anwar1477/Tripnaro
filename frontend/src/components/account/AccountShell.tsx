@@ -27,8 +27,8 @@ export function AccountShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="container-page py-6 lg:py-10">
-      <div className="grid gap-6 lg:grid-cols-[15rem_1fr]">
-        <aside className="lg:sticky lg:top-20 lg:self-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_1fr]">
+        <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
           <div className="mb-3 hidden items-center gap-3 lg:flex">
             <span className="grid size-11 place-items-center rounded-full bg-brand-600 font-bold text-white">{user.name[0]}</span>
             <div className="min-w-0">

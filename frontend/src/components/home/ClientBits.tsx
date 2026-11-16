@@ -12,7 +12,7 @@ import { Button } from "../common/Button";
 export function CouponCard({ coupon }: { coupon: Coupon }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="relative flex w-[19rem] shrink-0 snap-start flex-col rounded-(--radius-card) border border-dashed border-brand-300 bg-white p-5 shadow-(--shadow-card)">
+    <div className="relative flex w-[19rem] shrink-0 snap-start flex-col rounded-(--radius-card) border border-dashed border-brand-300 bg-surface p-5 shadow-(--shadow-card)">
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-coral-50 text-coral-600">
           <TicketPercent className="size-5" aria-hidden />

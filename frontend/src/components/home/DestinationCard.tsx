@@ -11,7 +11,7 @@ export function DestinationCard({ destination, className, size = "md" }: { desti
       className={cn("group relative block overflow-hidden rounded-(--radius-card) bg-ink-200", size === "lg" ? "aspect-[4/5] sm:aspect-auto sm:h-full sm:min-h-[26rem]" : "aspect-[4/5]", className)}
     >
       <Image src={destination.image} alt={destination.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover transition duration-700 group-hover:scale-105" />
-      <div className="absolute inset-0 bg-gradient-to-t from-ink-900/80 via-ink-900/10 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-night/80 via-night/10 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
         <p className="text-xs font-semibold tracking-wide text-white/75 uppercase">{destination.country}</p>
         <h3 className={cn("font-display font-semibold text-white", size === "lg" ? "text-3xl" : "text-xl")}>{destination.name}</h3>

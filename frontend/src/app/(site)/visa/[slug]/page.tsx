@@ -38,7 +38,7 @@ export default async function VisaCountryPage({ params }: Params) {
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Visa", path: "/visa" }, { name: c.country, path: `/visa/${slug}` }])} />
       <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Visa", href: "/visa" }, { name: c.country }]} className="mb-4" />
 
-      <div className="relative overflow-hidden rounded-(--radius-card) bg-ink-900 text-white">
+      <div className="relative overflow-hidden rounded-(--radius-card) bg-night text-white">
         {c.image && <Image src={c.image} alt="" fill priority sizes="100vw" className="object-cover opacity-45" />}
         <div className="relative p-6 sm:p-10">
           <p className="text-4xl" aria-hidden>{c.flag}</p>

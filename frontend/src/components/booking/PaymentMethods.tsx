@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CreditCard, Lock, ShieldCheck, Smartphone, Wallet } from "lucide-react";
 import { useAsync } from "@/hooks/useAsync";
-import { errorMessage } from "@/lib/api";
+import { errorMessage, toApiError } from "@/lib/api";
 import { cn, formatPrice } from "@/lib/utils";
 import { paymentService } from "@/services";
 import type { PaymentMethod } from "@/types";
@@ -21,7 +21,18 @@ const HINTS: Record<PaymentMethod["provider"], string> = {
 };
 
 /** Lists configured payment providers and starts a server-side payment session. */
-export function PaymentMethods({ amount, bookingId, visaApplicationId }: { amount: number; bookingId?: string; visaApplicationId?: string }) {
+export function PaymentMethods({
+  amount,
+  bookingId,
+  visaApplicationId,
+  onRepriced,
+}: {
+  amount: number;
+  bookingId?: string;
+  visaApplicationId?: string;
+  /** The server re-validated the coupon and changed the booking price: reload it before paying. */
+  onRepriced?: () => void;
+}) {
   const methods = useAsync(() => paymentService.methods(), []);
   const [selected, setSelected] = useState<PaymentMethod["provider"] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,11 +52,13 @@ export function PaymentMethods({ amount, bookingId, visaApplicationId }: { amoun
     } catch (err) {
       setError(errorMessage(err));
       setBusy(false);
+      const e = toApiError(err);
+      if (e.status === 409 && e.code?.startsWith("COUPON_")) onRepriced?.();
     }
   }
 
   return (
-    <section className="card p-5 sm:p-6" aria-labelledby="pay-h">
+    <section data-chat-avoid className="card p-5 sm:p-6" aria-labelledby="pay-h">
       <h2 id="pay-h" className="text-lg font-bold">Choose a payment method</h2>
       {methods.loading ? (
         <div className="mt-4 space-y-2"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>

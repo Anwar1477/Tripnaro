@@ -99,8 +99,8 @@ test.describe("responsive layout", () => {
   test("mobile navigation opens and navigates", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.goto("/");
-    await page.getByRole("button", { name: /menu/i }).first().click();
-    await page.getByRole("link", { name: "Tours" }).last().click();
+    await page.getByRole("button", { name: "Open menu" }).click();
+    await page.getByRole("navigation", { name: "Mobile" }).getByRole("link", { name: "Tours" }).click();
     await expect(page).toHaveURL(/\/tours/);
   });
 });

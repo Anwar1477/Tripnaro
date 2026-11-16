@@ -116,7 +116,7 @@ export function HotelSearchForm({ initial, compact = false }: { initial?: Partia
             <p className="truncate text-xs text-ink-500">{state.destinationLabel ? "Destination selected" : "Type at least 2 letters"}</p>
           </SearchBox>
           {open && suggestions.length > 0 && (
-            <ul role="listbox" className="absolute top-full left-0 z-40 mt-2 max-h-80 w-full min-w-72 overflow-y-auto rounded-xl border border-ink-100 bg-white p-1.5 shadow-(--shadow-lift)">
+            <ul role="listbox" className="absolute top-full left-0 z-40 mt-2 max-h-80 w-full min-w-72 overflow-y-auto rounded-xl border border-ink-100 bg-surface p-1.5 shadow-(--shadow-lift)">
               {suggestions.map((s) => (
                 <li key={`${s.kind}-${s.value}`} role="option" aria-selected={false} onMouseDown={(e) => { e.preventDefault(); pick(s); }} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-brand-50">
                   <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-ink-100 text-ink-600">{s.kind === "hotel" ? <Building2 className="size-4" /> : <MapPin className="size-4" />}</span>

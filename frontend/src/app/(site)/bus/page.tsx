@@ -27,7 +27,7 @@ export default async function BusPage({ searchParams }: { searchParams: Promise<
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Bus", path: "/bus" }])} />
-      <section className="border-b border-ink-100 bg-white">
+      <section className="border-b border-ink-100 bg-surface">
         <div className="container-page py-6">
           <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Bus tickets" }]} className="mb-3" />
           <h1 className="mb-5 font-display text-3xl font-semibold tracking-tight">Bus tickets</h1>

@@ -9,7 +9,7 @@ const tones = {
   success: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
   warning: "bg-amber-50 text-amber-800 ring-1 ring-amber-100",
   danger: "bg-red-50 text-red-700 ring-1 ring-red-100",
-  dark: "bg-ink-900/80 text-white backdrop-blur",
+  dark: "bg-night/80 text-white backdrop-blur",
 };
 
 export type BadgeTone = keyof typeof tones;

@@ -37,7 +37,7 @@ export function Popover({
       {open && (
         <div
           className={cn(
-            "absolute top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] animate-fade-up rounded-xl border border-ink-100 bg-white p-4 shadow-(--shadow-lift)",
+            "absolute top-full z-40 mt-2 w-[min(20rem,calc(100vw-2rem))] animate-fade-up rounded-xl border border-ink-100 bg-surface p-4 shadow-(--shadow-lift)",
             align === "right" ? "right-0" : "left-0",
             panelClassName,
           )}
@@ -52,7 +52,7 @@ export function Popover({
 /** The labelled "box" used by every search form field. */
 export function SearchBox({ label, icon, children, className }: { label: string; icon?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <div className={cn("group relative rounded-xl border border-ink-200 bg-white px-3.5 pt-2 pb-2 transition focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-100 hover:border-ink-300", className)}>
+    <div className={cn("group relative rounded-xl border border-ink-200 bg-surface px-3.5 pt-2 pb-2 transition focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-100 hover:border-ink-300", className)}>
       <span className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-ink-500 uppercase">
         {icon}
         {label}

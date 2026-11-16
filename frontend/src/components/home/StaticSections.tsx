@@ -17,7 +17,7 @@ export function WhyChoose() {
       <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.15fr]">
         <div className="relative hidden aspect-[4/5] overflow-hidden rounded-[1.75rem] lg:block">
           <Image src={img("1503220317375-aaad61436b1b", 1000)} alt="Traveller looking over a mountain lake" fill sizes="40vw" className="object-cover" />
-          <div className="absolute bottom-5 left-5 right-5 rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur">
+          <div className="absolute bottom-5 left-5 right-5 rounded-2xl bg-surface/95 p-4 shadow-lg backdrop-blur">
             <p className="flex items-center gap-2 text-sm font-bold">
               <BadgeCheck className="size-5 text-brand-600" /> 120,000+ happy travellers
             </p>
@@ -57,7 +57,7 @@ export function Experiences() {
         {items.map((x) => (
           <Link key={x.title} href={x.href} className="group relative block aspect-[3/4] overflow-hidden rounded-(--radius-card)">
             <Image src={x.image} alt={x.title} fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover transition duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink-900/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-night/80 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-4 text-white">
               <h3 className="font-display text-lg font-semibold text-white sm:text-xl">{x.title}</h3>
               <p className="mt-0.5 text-[13px] text-white/80">{x.text}</p>
@@ -114,9 +114,9 @@ export const HOME_FAQ = [
 export function FAQ() {
   return (
     <section className="container-page py-16" aria-labelledby="faq-heading">
-      <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[0.8fr_1.2fr]">
         <SectionHeading eyebrow="FAQ" title="Questions, answered" description="Can't find what you're looking for? Call 09612-345678 any time." />
-        <div className="divide-y divide-ink-100 rounded-(--radius-card) border border-ink-100 bg-white">
+        <div className="divide-y divide-ink-100 rounded-(--radius-card) border border-ink-100 bg-surface">
           {HOME_FAQ.map((f) => (
             <details key={f.q} className="group px-5 py-4 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink-900">

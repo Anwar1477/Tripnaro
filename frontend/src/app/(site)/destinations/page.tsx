@@ -24,7 +24,7 @@ export default async function DestinationsPage() {
       <p className="mt-2 max-w-2xl text-ink-600">Guides, tours and stays for the places our travellers love most.</p>
       <nav aria-label="Countries" className="mt-5 flex flex-wrap gap-2">
         {countries.map(([slug, name]) => (
-          <Link key={slug} href={`/destinations/${slug}`} className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-sm font-semibold text-ink-700 hover:border-brand-400 hover:text-brand-700">{name}</Link>
+          <Link key={slug} href={`/destinations/${slug}`} className="rounded-full border border-ink-200 bg-surface px-3 py-1.5 text-sm font-semibold text-ink-700 hover:border-brand-400 hover:text-brand-700">{name}</Link>
         ))}
       </nav>
       {domestic.length > 0 && (

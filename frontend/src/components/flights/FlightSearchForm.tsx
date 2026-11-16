@@ -95,7 +95,7 @@ export function FlightSearchForm({ initial, compact = false }: { initial?: Fligh
                 type="button"
                 aria-label="Swap origin and destination"
                 onClick={() => updateLeg(i, { from: leg.to, to: leg.from })}
-                className="absolute top-1/2 left-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-ink-200 bg-white text-brand-700 shadow-sm transition hover:rotate-180 sm:grid"
+                className="absolute top-1/2 left-1/2 z-10 hidden size-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-ink-200 bg-surface text-brand-700 shadow-sm transition hover:rotate-180 sm:grid"
               >
                 <ArrowLeftRight className="size-4" />
               </button>

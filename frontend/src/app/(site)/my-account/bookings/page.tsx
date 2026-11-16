@@ -41,7 +41,7 @@ function BookingsList() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div role="tablist" aria-label="Booking type" className="flex flex-wrap gap-1 rounded-xl bg-ink-100 p-1">
           {TABS.map((t) => (
-            <button key={t.v} role="tab" aria-selected={type === t.v} type="button" onClick={() => set({ type: t.v || undefined })} className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold", type === t.v ? "bg-white text-brand-700 shadow-sm" : "text-ink-600 hover:text-ink-900")}>
+            <button key={t.v} role="tab" aria-selected={type === t.v} type="button" onClick={() => set({ type: t.v || undefined })} className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold", type === t.v ? "bg-surface text-brand-700 shadow-sm" : "text-ink-600 hover:text-ink-900")}>
               {t.l}
             </button>
           ))}

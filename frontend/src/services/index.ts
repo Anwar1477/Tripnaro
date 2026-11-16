@@ -15,7 +15,7 @@ import type {
   Passengers,
   Payment,
   PaymentMethod,
-  Pricing,
+  QuoteResult,
   Review,
   Room,
   SavedTraveler,
@@ -106,14 +106,13 @@ export const visaService = {
 export type CreateBookingBody = Record<string, unknown> & { type: BookingType };
 
 export const bookingService = {
-  quote: (body: CreateBookingBody) => send<{ pricing: Pricing; coupon: { code: string; discount: number } | null }>("post", "/bookings/quote", body).then((r) => r.data),
+  quote: (body: CreateBookingBody) => send<QuoteResult>("post", "/bookings/quote", body).then((r) => r.data),
   create: (body: CreateBookingBody) => send<Booking>("post", "/bookings", body).then((r) => r.data),
   mine: (params: Record<string, unknown>) => getPaginated<Booking>("/bookings", params),
   get: (id: string) => get<Booking>(`/bookings/${id}`),
   cancel: (id: string, reason: string) => send<Booking>("post", `/bookings/${id}/cancel`, { reason }),
   refund: (id: string, reason: string) => send<Booking>("post", `/bookings/${id}/refund`, { reason }),
-  validateCoupon: (code: string, type: BookingType, amount: number) =>
-    send<{ code: string; title: string; discount: number }>("post", "/coupons/validate", { code, type, amount }),
+  removeCoupon: (id: string) => send<Booking>("delete", `/bookings/${id}/coupon`).then((r) => r.data),
 };
 
 export const paymentService = {

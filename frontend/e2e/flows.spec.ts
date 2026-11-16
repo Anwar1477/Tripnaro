@@ -15,7 +15,8 @@ test.describe("authentication", () => {
     await expect(page).toHaveURL(/\/my-account/);
     await expect(page.getByRole("heading", { name: /Hi, UI/ })).toBeVisible();
 
-    await page.getByRole("button", { name: "Sign out" }).click();
+    // Wait for the logout request itself; navigating immediately can abort it.
+    await Promise.all([page.waitForResponse((r) => r.url().includes("/auth/logout")), page.getByRole("button", { name: "Sign out" }).click()]);
     await page.goto("/my-account");
     await expect(page).toHaveURL(/\/login\?next=/);
 

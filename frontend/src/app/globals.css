@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dark mode follows <html data-theme="dark">, set before paint by the script in app/layout.tsx. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Tripnaro design tokens
  * ─────────────────────
@@ -48,6 +51,11 @@
   --color-sand-100: #f5f0e7;
   --color-sand-200: #ebe2d2;
 
+  /* Theme-aware surface (cards, panels, inputs) and a colour that stays dark in both themes
+     (photo overlays, dark hero bands, the admin sidebar). */
+  --color-surface: #ffffff;
+  --color-night: #121b2b;
+
   --radius-card: 1.125rem;
   --radius-field: 0.75rem;
 
@@ -66,6 +74,43 @@
       transform: translateY(0);
     }
   }
+}
+
+/*
+ * Dark theme
+ * ──────────
+ * Neutral scales are re-pointed so every `ink-*`, `sand-*` and `surface` utility adapts on its own.
+ * Brand/accent shades stay fixed (they are button and band backgrounds in both themes); only their
+ * pale tints and dark text shades are adjusted below, in the utilities layer.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-surface: #141d2c;
+  --color-ink-50: #1a2434;
+  --color-ink-100: #243042;
+  --color-ink-200: #303d52;
+  --color-ink-300: #46546c;
+  --color-ink-400: #7c8aa1;
+  --color-ink-500: #97a3b6;
+  --color-ink-600: #adb8c8;
+  --color-ink-700: #c5cdd9;
+  --color-ink-800: #dde3eb;
+  --color-ink-900: #f1f4f8;
+  --color-sand-50: #0c121d;
+  --color-sand-100: #121a28;
+  --color-sand-200: #1b2535;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 4px 16px rgb(0 0 0 / 0.25);
+  --shadow-lift: 0 2px 6px rgb(0 0 0 / 0.35), 0 16px 40px rgb(0 0 0 / 0.45);
+  --shadow-search: 0 10px 50px rgb(0 0 0 / 0.45);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+/* Switching themes should not animate every colour on the page. */
+:root[data-theme-switching] *,
+:root[data-theme-switching] *::before,
+:root[data-theme-switching] *::after {
+  transition: none !important;
 }
 
 @layer base {
@@ -101,10 +146,10 @@
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }
   .card {
-    @apply rounded-(--radius-card) border border-ink-100 bg-white shadow-(--shadow-card);
+    @apply rounded-(--radius-card) border border-ink-100 bg-surface shadow-(--shadow-card);
   }
   .field {
-    @apply h-11 w-full rounded-(--radius-field) border border-ink-200 bg-white px-3.5 text-[15px] text-ink-900 transition placeholder:text-ink-400 hover:border-ink-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-ink-50;
+    @apply h-11 w-full rounded-(--radius-field) border border-ink-200 bg-surface px-3.5 text-[15px] text-ink-900 transition placeholder:text-ink-400 hover:border-ink-300 focus:border-brand-500 focus:ring-4 focus:ring-brand-100 focus:outline-none disabled:cursor-not-allowed disabled:bg-ink-50;
   }
   .field-error {
     @apply border-coral-500 focus:border-coral-500 focus:ring-coral-100;
@@ -228,7 +273,7 @@
       padding: 0.375rem;
       border: 1px solid var(--color-ink-100);
       border-radius: 0.75rem;
-      background: #fff;
+      background: var(--color-surface);
       box-shadow: var(--shadow-lift);
       font-size: 14px;
     }
@@ -281,5 +326,68 @@
 @supports (appearance: base-select) {
   .select-base {
     appearance: base-select;
+  }
+}
+
+/*
+ * Floating Messenger launcher (components/layout/MessengerChat.tsx)
+ * When the launcher is on the page, lift toasts above it so the two never overlap.
+ * Unlayered so it wins over the Toaster's `bottom-4` utility.
+ */
+:root:has([data-chat-launcher]) .toast-region {
+  bottom: calc(max(1rem, env(safe-area-inset-bottom)) + 4.5rem);
+}
+@media (min-width: 40rem) {
+  :root:has([data-chat-launcher]) .toast-region {
+    bottom: 6.5rem;
+  }
+}
+
+/*
+ * Dark theme: tints and text shades of the fixed colour scales.
+ * Same specificity as the utilities they adjust and declared after them, so state variants
+ * (hover:, focus:) keep working.
+ */
+@layer utilities {
+  :where([data-theme="dark"]) {
+    .text-brand-600, .text-brand-700, .eyebrow, .focus\:text-brand-600:focus { color: #5ec2b8; }
+    .hover\:text-brand-700:hover, .group:hover .group-hover\:text-brand-700, .group:hover .group-hover\:text-brand-600 { color: #7fd3ca; }
+    .text-brand-800, .text-brand-900, .text-brand-950 { color: #a6e2db; }
+    .bg-brand-50, .hover\:bg-brand-50:hover { background-color: rgb(42 134 128 / 0.16); }
+    .bg-brand-50\/50, .bg-brand-50\/60 { background-color: rgb(42 134 128 / 0.1); }
+    .bg-brand-100, .hover\:bg-brand-100:hover { background-color: rgb(42 134 128 / 0.26); }
+    .bg-brand-200 { background-color: rgb(42 134 128 / 0.38); }
+    .border-brand-200 { border-color: rgb(70 162 155 / 0.4); }
+    .border-brand-300 { border-color: rgb(70 162 155 / 0.55); }
+    .ring-brand-100, .focus-within\:ring-brand-100:focus-within { --tw-ring-color: rgb(42 134 128 / 0.35); }
+
+    .text-coral-600, .text-coral-700, .hover\:text-coral-600:hover { color: #ff8a66; }
+    .bg-coral-50, .hover\:bg-coral-50:hover { background-color: rgb(244 93 53 / 0.14); }
+    .border-coral-200 { border-color: rgb(244 93 53 / 0.4); }
+    .ring-coral-100 { --tw-ring-color: rgb(244 93 53 / 0.3); }
+
+    .text-emerald-600, .text-emerald-700 { color: #4ade9b; }
+    .text-emerald-800, .text-emerald-900 { color: #8ef0c0; }
+    .bg-emerald-50 { background-color: rgb(16 185 129 / 0.13); }
+    .hover\:bg-emerald-100:hover { background-color: rgb(16 185 129 / 0.24); }
+    .border-emerald-200 { border-color: rgb(16 185 129 / 0.35); }
+    .ring-emerald-100 { --tw-ring-color: rgb(16 185 129 / 0.3); }
+
+    .text-amber-600, .text-amber-700 { color: #fbbf24; }
+    .text-amber-800, .text-amber-900 { color: #fcd77a; }
+    .bg-amber-50, .bg-amber-50\/60 { background-color: rgb(245 158 11 / 0.12); }
+    .bg-amber-100 { background-color: rgb(245 158 11 / 0.22); }
+    .border-amber-200 { border-color: rgb(245 158 11 / 0.35); }
+    .ring-amber-100 { --tw-ring-color: rgb(245 158 11 / 0.3); }
+
+    .text-red-700 { color: #fca5a5; }
+    .bg-red-50 { background-color: rgb(239 68 68 / 0.14); }
+    .ring-red-100 { --tw-ring-color: rgb(239 68 68 / 0.3); }
+
+    /* Component classes built with @apply carry their own colours. */
+    .field:focus { --tw-ring-color: rgb(42 134 128 / 0.35); }
+    .field-error:focus { --tw-ring-color: rgb(244 93 53 / 0.3); }
+    .select-base option:hover, .select-base option:focus-visible, .select-base option:checked { background-color: rgb(42 134 128 / 0.2); color: #a6e2db; }
+    ::selection { background-color: rgb(42 134 128 / 0.5); color: #fff; }
   }
 }

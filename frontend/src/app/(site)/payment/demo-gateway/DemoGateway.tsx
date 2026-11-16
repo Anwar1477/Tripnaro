@@ -40,7 +40,7 @@ export function DemoGateway() {
   const subject = d.booking ? `${d.booking.title} (${d.booking.reference})` : d.visaApplication ? `${d.visaApplication.countryName} ${d.visaApplication.visaType} visa (${d.visaApplication.reference})` : "";
 
   return (
-    <div className="card overflow-hidden">
+    <div data-chat-avoid className="card overflow-hidden">
       <div className="flex items-center gap-3 bg-amber-100 px-5 py-3 text-amber-900">
         <FlaskConical className="size-5 shrink-0" />
         <p className="text-sm font-bold">DEMO PAYMENT GATEWAY: no real money is charged</p>

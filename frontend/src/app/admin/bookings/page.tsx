@@ -115,7 +115,7 @@ function AdminBookings() {
                 <p className="mt-3 font-bold">History</p>
                 <ul className="mt-1 space-y-1 text-xs text-ink-600">{[...selected.statusHistory].reverse().slice(0, 6).map((h, i) => <li key={i}>{titleCase(h.status)} · {h.note} · {formatDateTime(h.at)}</li>)}</ul>
               </div>
-              <PriceSummary pricing={selected.pricing} />
+              <PriceSummary pricing={selected.pricing} coupon={selected.coupon?.code ? selected.coupon : null} />
             </div>
             <div className="rounded-xl border border-ink-100 p-4">
               <p className="font-bold">Take action</p>

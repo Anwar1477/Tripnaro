@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
         <section className="card p-5" aria-labelledby="rev-h">
           <h2 id="rev-h" className="font-bold">Successful payments, last 6 months</h2>
           <div className="mt-6 flex h-48 items-end gap-3" role="img" aria-label="Monthly payment totals">

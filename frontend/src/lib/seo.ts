@@ -16,14 +16,16 @@ interface PageMeta {
   path: string;
   image?: string;
   noIndex?: boolean;
+  /** Use the title as-is, without the "· Tripnaro" template suffix (for titles that already name the brand). */
+  absoluteTitle?: boolean;
 }
 
 /** Consistent title, description, canonical, Open Graph and Twitter metadata for every page. */
-export function buildMetadata({ title, description = siteConfig.description, path, image, noIndex }: PageMeta): Metadata {
+export function buildMetadata({ title, description = siteConfig.description, path, image, noIndex, absoluteTitle }: PageMeta): Metadata {
   const url = `${siteConfig.url}${path}`;
   const images = [{ url: image ?? siteConfig.ogImage, width: 1200, height: 630, alt: title }];
   return {
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: { canonical: url },
     openGraph: { type: "website", url, title, description, siteName: siteConfig.name, images, locale: "en_BD" },

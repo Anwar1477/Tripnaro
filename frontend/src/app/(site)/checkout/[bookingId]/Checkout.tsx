@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock, Users } from "lucide-react";
+import { CalendarDays, Clock, Users, X } from "lucide-react";
 import { PaymentMethods } from "@/components/booking/PaymentMethods";
 import { PriceSummary } from "@/components/booking/PriceSummary";
 import { StatusBadge } from "@/components/common/Badge";
@@ -10,8 +10,10 @@ import { LinkButton } from "@/components/common/Button";
 import { Alert, EmptyState, ErrorState, PageLoader } from "@/components/common/Feedback";
 import { useAsync } from "@/hooks/useAsync";
 import { useRequireAuth } from "@/hooks/useAuth";
+import { errorMessage } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 import { bookingService } from "@/services";
+import { toast } from "@/store/toast";
 
 function useCountdown(until?: string) {
   const [now, setNow] = useState(() => Date.now());
@@ -22,6 +24,31 @@ function useCountdown(until?: string) {
   }, [until]);
   if (!until) return null;
   return Math.max(0, new Date(until).getTime() - now);
+}
+
+/** Lets the customer drop a coupon from an unpaid booking (e.g. a bKash-only code when paying by card). */
+function RemoveCoupon({ bookingId, code, onDone }: { bookingId: string; code: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await bookingService.removeCoupon(bookingId);
+          toast.info(`Coupon ${code} removed. The full price now applies.`);
+          onDone();
+        } catch (err) {
+          toast.error(errorMessage(err));
+          setBusy(false);
+        }
+      }}
+      className="mt-3 inline-flex items-center gap-1.5 text-[13px] font-semibold text-ink-600 transition hover:text-coral-600 disabled:opacity-50"
+    >
+      <X className="size-3.5" aria-hidden /> Remove coupon {code}
+    </button>
+  );
 }
 
 export function Checkout({ bookingId }: { bookingId: string }) {
@@ -39,7 +66,7 @@ export function Checkout({ bookingId }: { bookingId: string }) {
   const ss = left !== null ? String(Math.floor((left % 60000) / 1000)).padStart(2, "0") : "";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
       <div className="min-w-0 space-y-5">
         {payable && left !== null && (
           <Alert tone="warning" title={`Complete payment within ${mm}:${ss}`}>
@@ -47,7 +74,7 @@ export function Checkout({ bookingId }: { bookingId: string }) {
           </Alert>
         )}
         {payable ? (
-          <PaymentMethods amount={booking.pricing.total} bookingId={booking._id} />
+          <PaymentMethods amount={booking.pricing.total} bookingId={booking._id} onRepriced={reload} />
         ) : (
           <EmptyState
             title={booking.paymentStatus === "paid" ? "This booking is already paid" : expired ? "Your hold has expired" : `This booking is ${booking.status}`}
@@ -70,7 +97,10 @@ export function Checkout({ bookingId }: { bookingId: string }) {
             {booking.holdExpiresAt && booking.status === "pending" && <p className="flex items-center gap-2 text-ink-600"><Clock className="size-4" />Hold until {formatDateTime(booking.holdExpiresAt)}</p>}
           </div>
         </div>
-        <div className="card p-5"><PriceSummary pricing={booking.pricing} /></div>
+        <div data-chat-avoid className="card p-5">
+          <PriceSummary pricing={booking.pricing} coupon={booking.coupon?.code && booking.pricing.discount > 0 ? booking.coupon : null} />
+          {payable && booking.coupon?.code && booking.pricing.discount > 0 && <RemoveCoupon bookingId={booking._id} code={booking.coupon.code} onDone={reload} />}
+        </div>
       </aside>
     </div>
   );

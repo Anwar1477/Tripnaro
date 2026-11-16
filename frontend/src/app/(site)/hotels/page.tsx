@@ -16,7 +16,7 @@ export default async function HotelsPage({ searchParams }: { searchParams: Promi
   return (
     <>
       <JsonLd data={breadcrumbJsonLd([{ name: "Home", path: "/" }, { name: "Hotels", path: "/hotels" }])} />
-      <section className="border-b border-ink-100 bg-white">
+      <section className="border-b border-ink-100 bg-surface">
         <div className="container-page py-6">
           <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Hotels" }]} className="mb-3" />
           <h1 className="mb-5 font-display text-3xl font-semibold tracking-tight">Find your stay</h1>

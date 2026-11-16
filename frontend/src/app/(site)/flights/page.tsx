@@ -32,7 +32,7 @@ export default function FlightsPage() {
           <Breadcrumbs items={[{ name: "Home", href: "/" }, { name: "Flights" }]} className="mb-4 text-white/80 [&_a]:text-white/80" />
           <h1 className="font-display text-3xl font-semibold tracking-tight sm:text-5xl">Fly anywhere, simply.</h1>
           <p className="mt-2 max-w-xl text-white/85">Domestic hops and international journeys. Compare schedules and fares in one place.</p>
-          <div className="mt-6 rounded-(--radius-card) bg-white p-4 text-ink-900 shadow-(--shadow-search) sm:p-6">
+          <div className="mt-6 rounded-(--radius-card) bg-surface p-4 text-ink-900 shadow-(--shadow-search) sm:p-6">
             <FlightSearchForm />
           </div>
         </div>

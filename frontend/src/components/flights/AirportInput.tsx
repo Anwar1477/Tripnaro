@@ -106,7 +106,7 @@ export function AirportInput({
         <p className="truncate text-xs text-ink-500">{selected ? selected.name : error ?? "Select an airport"}</p>
       </SearchBox>
       {open && (
-        <ul id={listId} role="listbox" className="absolute top-full left-0 z-40 mt-2 max-h-80 w-full min-w-72 overflow-y-auto rounded-xl border border-ink-100 bg-white p-1.5 shadow-(--shadow-lift)">
+        <ul id={listId} role="listbox" className="absolute top-full left-0 z-40 mt-2 max-h-80 w-full min-w-72 overflow-y-auto rounded-xl border border-ink-100 bg-surface p-1.5 shadow-(--shadow-lift)">
           {shown.length === 0 && <li className="px-3 py-3 text-sm text-ink-500">No airports match “{query}”</li>}
           {shown.map((a, i) => (
             <li

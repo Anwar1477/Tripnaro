@@ -74,7 +74,7 @@ export async function PaymentMethods() {
                 className={cn("h-auto w-auto max-w-full", brand.className)}
               />
               {planned && (
-                <span aria-hidden className="absolute -top-1.5 -right-1.5 rounded-full bg-ink-800 px-1.5 py-px text-[9px] font-bold tracking-wide text-white uppercase">
+                <span aria-hidden className="absolute -top-1.5 -right-1.5 rounded-full bg-night px-1.5 py-px text-[9px] font-bold tracking-wide text-white uppercase">
                   Soon
                 </span>
               )}

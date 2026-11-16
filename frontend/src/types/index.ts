@@ -356,7 +356,7 @@ export interface Booking {
   contact: { name: string; email: string; phone: string };
   specialRequests?: string;
   pricing: Pricing;
-  coupon?: { code: string; discount: number };
+  coupon?: AppliedCoupon;
   holdExpiresAt?: string;
   cancellation?: { status: string; reason?: string; requestedAt?: string };
   refund?: { status: string; amount?: number; reason?: string };
@@ -402,9 +402,42 @@ export interface Coupon {
   validFrom: string;
   validTo: string;
   usageLimit: number;
+  perUserLimit?: number;
   usedCount: number;
   showOnHome: boolean;
   active: boolean;
+}
+
+/**
+ * A coupon the server has validated and applied to a price (quote) or a booking. The UI shows
+ * discount badges only from this object, never from the code a customer typed.
+ */
+export interface AppliedCoupon {
+  code: string;
+  title?: string;
+  discountType?: "percent" | "flat";
+  value?: number;
+  discount: number;
+  /** Quote only: the max-discount cap reduced the discount. */
+  capped?: boolean;
+  maxDiscount?: number;
+  /** Quote only: coupon is redeemable only with this payment provider. */
+  paymentChannel?: string;
+}
+
+export interface QuoteResult {
+  pricing: Pricing;
+  coupon: AppliedCoupon | null;
+  /** Set when the requested coupon was rejected; pricing is then the full price. */
+  couponError: { code: string; message: string } | null;
+  /** Global coupon switch (Admin → Coupons). */
+  couponsEnabled: boolean;
+}
+
+export interface CouponStats {
+  enabled: boolean;
+  totals: { coupons: number; live: number; redeemed: number; onHold: number; discountGiven: number };
+  byCode: { code: string; redeemed: number; onHold: number; discountGiven: number; revenue: number }[];
 }
 
 export interface Banner {
@@ -429,6 +462,7 @@ export interface SiteSettings {
   serviceFeePercent: number;
   noticeBar?: { text?: string; link?: string; active: boolean };
   social?: Record<string, string>;
+  messenger?: { enabled?: boolean; pageUsername?: string; greeting?: string };
   features?: Record<string, boolean>;
 }
 

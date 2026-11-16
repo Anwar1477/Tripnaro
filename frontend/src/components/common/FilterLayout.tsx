@@ -27,7 +27,7 @@ export function FilterLayout({
   }, [open]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[17rem_1fr]">
       <aside className="hidden lg:block" aria-label="Filters">
         <div className="card sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto p-5">
           <div className="mb-4 flex items-center justify-between">
@@ -60,7 +60,7 @@ export function FilterLayout({
       >
         <div
           className={cn(
-            "bg-ink-900/50 absolute inset-0 transition-opacity",
+            "bg-night/50 absolute inset-0 transition-opacity",
             open ? "opacity-100" : "opacity-0",
           )}
           onClick={() => setOpen(false)}
@@ -70,7 +70,7 @@ export function FilterLayout({
           aria-modal="true"
           aria-label="Filters"
           className={cn(
-            "absolute inset-y-0 right-0 flex w-[min(22rem,100%)] flex-col bg-white shadow-xl transition-transform",
+            "absolute inset-y-0 right-0 flex w-[min(22rem,100%)] flex-col bg-surface shadow-xl transition-transform",
             open ? "translate-x-0" : "translate-x-full",
           )}
         >

@@ -133,7 +133,7 @@ export function FlightResults() {
                 type="button"
                 disabled={i > picked.length}
                 onClick={() => { setLegIndex(i); resetFilters(); }}
-                className={cn("flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition disabled:opacity-40", i === legIndex ? "border-brand-600 bg-brand-600 text-white" : picked[i] ? "border-brand-200 bg-brand-50 text-brand-800" : "border-ink-200 bg-white text-ink-600")}
+                className={cn("flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition disabled:opacity-40", i === legIndex ? "border-brand-600 bg-brand-600 text-white" : picked[i] ? "border-brand-200 bg-brand-50 text-brand-800" : "border-ink-200 bg-surface text-ink-600")}
               >
                 {i + 1}. {l.from} <ArrowRight className="size-3.5" /> {l.to}
                 <span className="font-normal opacity-80">{formatDate(l.date, { year: undefined })}</span>
